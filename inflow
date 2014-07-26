@@ -1,0 +1,234 @@
+server -> socket connection -> new thread -> data transmitted by server line-by-line -> received by server -> data stored in arrays from buffer (for loop?) -> arrays parsed -> injected into mysql as strings
+
+
+
+
+data arrays:
+char buffer[1024]
+	-> buffer[0]
+		-> always "0" (start)
+	-> buffer[1] - buffer[4]
+		-> 4-character max server number, expressed as zeroes before significant digits, e.g. 0250, or 0025, or 0003
+	
+	-> buffer[5] = "1" (next section)
+	-> buffer[6] = server_code[0] (server subtype code)
+		-> 0 = "special" (DB, cruncher, serv machines, and LBs servers)
+		-> 1 = "gc" (any server with .gc in the name, e.g. r/h/t servers
+		-> 2 = "nntp" (any server with .nntp in the name, e.g. border, backlog, etc.)
+		-> 3 = "vpn"
+		-> 4 = "dump truck"
+		-> 5 = "network equipment"
+		-> 6 = "other
+	-> buffer[7] = server_code[1] (server type code, displaying here as combination of server_code[0] and server_code[1])
+		-> 00 = "Database"
+		-> 02 = "Cruncher"
+		-> 03 = "Serv"
+		-> 04 = "Load Balancer"
+		-> 10 = "r-server"
+		-> 11 = "h-server"
+		-> 12 = "t-server"
+		-> 20 = "num server"
+		-> 21 = "border server"
+		-> 22 = "backlog server"
+		-> 23 = "gcf server"
+		-> 24 = "xref server"
+		-> 30 = "vmhost server"
+		-> 31 = "vpnhost server"
+		-> 32 = "vpn virtual server"
+		-> 40 = "s-server."
+		-> 50 = "gateway"
+		-> 51 = "switch"
+		-> 52 = "firewall"
+		-> 53 = "sd switch"
+		-> 54 = "pdu"
+		-> 60 = "unknown/other"
+	-> buffer[8] = server_code[2] (service status)
+		-> 0 = "unknown/Not running"
+		-> 1 = "Running Normally"
+		-> 2 = "Some services running"
+		-> 3 = "Critical error"
+	-> buffer[9] = server_code[3] (Recovery status)
+		-> 0 = Recovery not running.
+		-> 1 = Recover running and healthy
+		-> 2 = Recovery running, but defunct processes found. (infected)
+		-> 3 = Recovery has gone defunct (zombie/undead)
+	-> buffer[10] = server_code[4] (number of drives)
+		-> 0 = "12" (12 drive server)
+		-> 1 = "36" (36 drive server)
+		-> 2 = "4" ( 4 drive server)
+		-> 3 = "0" (unknown # of drives)
+	-> buffer[11] = server_code[5] (region code)
+		-> 0 = tx region
+		-> 1 = North America Region
+		-> 2 = EU region
+		-> 3 = East Asia region
+		-> 4 = AU region
+	-> buffer[12] = server_code[6] (site identifier. paired with rg code)
+		-> 00 = aus
+		-> 01 = aus2
+		-> 10 = dca
+		-> 11 = dca1
+		-> 12 = dca2
+		-> 13 = dca3
+		-> 14 = lax
+		-> 15 = mia
+		-> 16 = tor
+		-> 17 = nyc
+		-> 20 = ams
+		-> 21 = ams1? (if it ever exists)
+		-> 22 = ams2
+		-> 23 = ams3
+		-> 24 = lon
+		-> 25 = zur
+		-> 26 = war
+		-> 30 = hkg
+		-> 31 = sgp
+		-> 32 = tok
+		-> 33 = syd
+	-> buffer[13] = server_code[7] (overall health)
+		-> 0 = "Down" (Not on, etc.)
+		-> 1 = "Healthy" (no problems)
+		-> 2 = "Degraded" (1-2 problems)
+		-> 3 = "Critical" ( 3+ problems )
+	-> buffer[14] = server_code[8] ( Asset type )
+		-> 0 = "Server"
+		-> 1 = "Network equipment"
+		-> 2 = "PDU"
+		-> 3 = "other"
+	-> buffer[15] = server_code[9] (Not mapped, array terminatora)
+	-> buffer[16] = "1" (next section)
+	-> buffer[ 17 - 409 ] (reserved for description of arrays)
+	-> buffer[410] = "1" (next section)
+	-> buffer[ 411 - 1023 ] = drive bits
+		-> 411 = d0state[0] > drive number char 1
+		-> 412 = d0state[1] > drive number char 2
+		------------------------------------------------
+		-> 413 = d0state[2] > spool number char 1
+		-> 414 = d0state[3] > spool number char 2
+		------------------------------------------------
+		-> 415 = d0state[4] > spool fill % char 1
+		-> 416 = d0state[5] > spool fill % char 2
+		-> 417 = d0state[6] > spool fill % char 3
+		------------------------------------------------
+		-> 418 = d0state[7] > spool status char
+		------------------------------------------------
+		-> 419 = d0state[8] > drive status char
+		------------------------------------------------
+		-> 420 = d0state[9] > pending sector char 1
+		-> 421 = d0state[10] > pending sector char 2
+		-> 422 = d0state[11] > pending sector char 3
+		-> 423 = d0state[12] > pending sector char 4
+		------------------------------------------------
+		-> 424 = d0state[13] > reallocated sector char 1
+		-> 425 = d0state[14] > reallocated sector char 2
+		-> 426 = d0state[15] > reallocated sector char 3
+		-> 427 = d0state[16] > reallocated sector char 4
+		------------------------------------------------
+	-> buffer[1024] = "0" (end of data)
+
+
+
+
+
+
+17 characters per drive
+612 total characters
+
+
+
+
+
+	-> drivestate[x][1][z] = spool number (2 digits, rest * characters)
+	-> drivestate[x][2][z] = spool fill percent (3 digits, rest * characters)
+	-> drivestate[x][3][0] = spool status (1 digit, rest * characters) 0-4
+		-> 0 = (OFF)
+		-> 1 = (RW)
+		-> 2 = (NO/ERROR)
+		-> 3 = (RO)
+		-> 4 = (NO)
+	-> drivestate[x][4][0] = drive status (1 digit, rest * characters) 0-3
+		-> 0 = drive missing/failed
+		-> 1 = drive healthy
+		-> 2 = drive degraded
+		-> 3 = drive critical
+	-> drivestate[x][5][z] = drive pending sectors (max 4 digits)
+	-> drivestate[x][6][z] = drive reallocated sectors (max 4 digits)
+int server_code[8]
+	-> server_code[0] = server type - 0-9?
+		-> 0 = r-server
+		-> 1 = h-server
+		-> 2 = t-server
+		-> 3 = xref server
+		-> 4 = gcf(Feeder) server
+		-> 5 = border server
+		-> 6 = backlog server
+		-> 7 = num server
+		-> 8 = serv machine 
+		-> 9 = other
+	-> server_code[1] = overall health - 0-3
+		-> 0 ="Failed/not responding
+		-> 1 = Healthy/functioning normally/in service
+		-> 2 = Degraded - errors occuring, etc, but has not been out of serviced
+		-> 3 = Critical - function-impeding problems, or server out of service.
+	-> server_code[2] = gc status/nntp status - 0-2
+		-status> 0 = gc not running, articles not passing normally
+		-> 1 = gc running, articles passing normally.
+		-> 2 = gc running, articles not passing normally.
+	-> server_code[3] = Recovery status - 0-3
+		-> 0 = Recovery not running.
+		-> 1 = Recover running and healthy
+		-> 2 = Recovery running, but defunct processes found. (infected)
+		-> 3 = Recovery has gone defunct (zombie/undead)
+	-> server_code[4] = number of drives - 0-2
+		-> 0 = other
+		-> 1 = 12 drives
+		-> 2 = 36 drives
+	-> server_code[5] = site shortcode character 1 (region code) 
+		-> 0 = tx region
+		-> 1 = North America Region
+		-> 2 = EU region
+		-> 3 = East Asia region
+		-> 4 = AU region
+	-> server_code[6] = site shortcode 2 - full combinations below
+		-> 00 = aus
+		-> 01 = aus2
+		-> 10 = dca
+		-> 11 = dca1
+		-> 12 = dca2
+		-> 13 = dca3
+		-> 14 = lax
+		-> 15 = mia
+		-> 16 = tor
+		-> 17 = nyc
+		-> 20 = ams
+		-> 21 = ams1? (if it ever exists)
+		-> 22 = ams2
+		-> 23 = ams3
+		-> 24 = lon
+		-> 25 = zur
+		-> 30 = hkg
+		-> 31 = sgp
+		-> 32 = tok
+		-> 33 = syd
+	-> server_code[7] = combined traffic
+		-> 0 = between 0 and 10 mb/s in/out avg traffic
+		-> 1 = between 11 and 100 mb/s in/out avg traffic
+		-> 2 = between 101 and 500 mb/s in/out avg traffic
+		-> 3 = between 501 mb/s and 1g/s in/out avg traffic
+		-> 4 = between 1.1g/s and 3.0g/s in/out avg traffic
+		-> 5 = between 3.1g/s and 5.0g/s in/out avg traffic
+		-> 6 between 5.1g/s and 10.0g/s in/out avg traffic
+	-> server_code[8] = array terminating character
+
+
+	drivebits
+
+
+
+
+
+
+
+
+
+	info on gn services
