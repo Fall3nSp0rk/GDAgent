@@ -60,6 +60,7 @@ class serial {
 			int aint = cint;
 			return aint;
 		};
+//	protected:
 		std::string Srstate;
 		std::string Sstype;
 		std::string Ssite;
@@ -72,6 +73,7 @@ class serial {
 		int Sdnum;
 
 	private:
+		friend class dbase;
 		std::string  readID(  vector<unsigned long int> hbits, std::string fstype ); // definition written
 		void getHostName( vector<int> &fsbits, vector<unsigned long int> fhbits ); // definition written
 		vector<int> Snbuff;
@@ -89,7 +91,7 @@ class serial {
 		vector<int> Ssbits;
 		vector<int> Sdbits;
 		vector<int> Smbits;
-		
+		void debuf();
 	
 } buffer;
 
@@ -104,6 +106,13 @@ void serial::deSerialize() {
 	readDNum( Ssbits );
 	readMac( Smbits );
 	readAType( Ssbits );
+	debuf();
+}
+
+void serial::debuf() {
+	std::cout<< Ssite << std::endl;
+	std::cout<< Sstype << std::endl;
+	std::cout<< Shname << std::endl;
 }
 // function definitions for serial class follow here
 
