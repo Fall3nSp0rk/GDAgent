@@ -17,9 +17,9 @@ class dbase {
 	public:
 		dbase();
 		void runQuery();
+		bool getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, int vfill, int dnum );
 	private:
 		bool sQuery( std::string data, std::string table, std::string column );
-		bool getQueryData();
 		bool checkExists( std::string site );
 		void storeQueryData( std::string fsval, int posid ); // written
 		std::vector<std::string> inval;
@@ -29,7 +29,6 @@ class dbase {
 
 }thread;
 void dbase::runQuery() {
-	getQueryData();
 	if ( checkExists( inval[1] ) == true ) {
 		update();
 	}
@@ -44,13 +43,17 @@ bool dbase::checkExists( std::string data ) {
 		queryss<< "SELECT hostname FROM `" << dbname << "`.`gd_servers` WHERE hostname = " << mysqlpp::quote_only << data << ";";
 		std::string qstr = queryss.str();
 		mysqlpp::Query query = con3.query( qstr );
-		std::cout << qstr << std::endl;
+		//std::cout << qstr << std::endl;
 		mysqlpp::StoreQueryResult res = query.store();
-		for ( int i = 0; i < res.size(); i++ ) {
-			std::cout<< res[i];
+		std::stringstream res1;
+		for ( std::vector<mysqlpp::Row>::iterator it= res.begin(); it != res.end(); ++it ) {
+			mysqlpp::Row row = *it;
+			res1 << row[0] << std::endl;
 		}
-		std::cout<< res;
-		if ( res ) {
+		std::string result = res1.str();
+		std::cout<< result << std::endl;
+
+		if ( result == inval[1] ) {
 			return true;
 		}
 		else {
@@ -87,9 +90,13 @@ std::string dbase::getLocFromSite( std::string site ) {
 		std::string loc = lfs.str();
 		mysqlpp::Query query = conn.query( loc );
 		if (mysqlpp::StoreQueryResult res = query.store() ) {
-			std::stringstream ress;
-			ress << res;
-			std::string result = ress.str();
+			std::stringstream res1;
+			for ( std::vector<mysqlpp::Row>::iterator it= res.begin(); it != res.end(); ++it ) {
+				mysqlpp::Row row = *it;
+				res1 << row[0] << std::endl;
+			}
+			std::string result = res1.str();
+
 			return result;
 		} 
 		if ( conn.errnum() ) {
@@ -115,9 +122,10 @@ void dbase::insert() {
 		for( int i = 0; i < 13; i++ ) {
 			iss<< mysqlpp::quote_only << inval[i] << ", ";
 		}
-		iss<< mysqlpp::quote_only << inval[13] << " );";
+		iss<< mysqlpp::quote_only << "0" << ", NOW() );";
 		std::string is = iss.str();
 		mysqlpp::Query query = conn.query( is );
+		std::cout<< is << std::endl;
 		mysqlpp::SimpleResult res = query.execute();
 		if( res ) {
 			std::cout<< "Data inserted successfully." << std::endl;
@@ -131,45 +139,57 @@ void dbase::insert() {
 	}
 }
 
-bool dbase::getQueryData() {
-	std::string Frstate = buffer.Srstate; // recovery state
-	std::string Fstype = buffer.Sstype; // server type
-	std::string Fsite = buffer.Ssite; // site
-	std::string Fhost = buffer.Shname; // hostname
-	std::string Fatype = buffer.Satype; // asset type
-	std::string Fsstate = buffer.Sservices; // service status
-	std::string Fanum = buffer.Sanum; // number of arrays
+bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, int vfill, int dnum ) {
+	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
+	std::string Fstype = buffer.giveStrVal( buffer.Sstype ); // server type
+	std::string Fsite = buffer.giveStrVal( buffer.Ssite ); // site
+	std::string Fhost = buffer.giveStrVal( buffer.Shname ); // hostname
+	std::string Fatype = buffer.giveStrVal( buffer.Satype ); // asset type
+	std::string Fsstate = buffer.giveStrVal( buffer.Sservices ); // service status
+	std::string Fanum = buffer.giveStrVal( buffer.Sanum ); // number of arrays */
 	std::string Fshorthost = "herp"; // host shortname
 	std::string Floc = getLocFromSite( Fsite ); // location, queried from database based on string
 	std::string FOrt = "false"; // true/false value for whether there is an open RT for the server. default is false.
 	std::string Fmac = "aa:bb::cc:dd:ee:ff";
 	std::stringstream ssfill;
-	ssfill << buffer.Svarfill; // /var fill percentage
+	ssfill << vfill; // /ivar fill percentage
 	std::string Fvfill = ssfill.str();
 	std::stringstream ssdnum;
-	ssdnum <<  buffer.Sdnum; // number of hard drives
+	ssdnum <<  dnum; // number of hard drives
 	std::string Fdnum = ssdnum.str();
 	std::string uid= ""; // queried from database, default is 0;
-	// connector with serial class will go here, when I write it.
-	//
+	if ( Fstype == "r" || Fstype == "h" || Fstype == "t" ) {
+		std::stringstream ss;
+		ss << Fstype << mysqlpp::quote << "_server";
+		std::string sstype = ss.str();
+		storeQueryData( sstype, 4 );
+	}
+	else {
+		storeQueryData( Fstype, 5 );
+	}
+	int num = 5; // this is  temporary until I write it's hook in the serial class.
+	std::stringstream anum1;
+	anum1 << num;
+	std::string tanum = anum1.str();
 	storeQueryData( Fatype, 0 );
 	storeQueryData( Fhost, 1 );
 	storeQueryData( Fshorthost, 2 );
 	storeQueryData( uid, 3 );
-	storeQueryData( Fstype, 4 );
+	//storeQueryData( Fstype, 4 );
 	storeQueryData( Fsite, 5 );
 	storeQueryData( Floc, 6 );
 	storeQueryData( Fmac, 7 );
 	storeQueryData( Fdnum, 8 );
-	storeQueryData( Fanum, 9 );
+	storeQueryData( tanum , 9 );
 	storeQueryData( Frstate, 10 );
 	storeQueryData( Fsstate, 11 );
 	storeQueryData( Fvfill, 12 );
 	storeQueryData( FOrt, 13 );
-	for ( int i = 0; i < 14; i++ ) {
+	 /* for ( int i = 0; i < 14; i++ ) {
 		std::cout<< inval[i];
 	}
-	std::cout<< std::endl << Fhost << std::endl;
+	std::cout<< std::endl << Fhost << std::endl; */
+	std::cout << buffer.giveStrVal( buffer.Shname ) << std::endl;
 }
 
 void dbase::storeQueryData( std::string fsval, int posid ) {
@@ -179,7 +199,7 @@ void dbase::storeQueryData( std::string fsval, int posid ) {
 dbase::dbase() {
 	// initialize the size of the query data storage vector
 	inval.resize(16);
-	getQueryData(); // retrieve data to be entered into the database
+	// getQueryData(); // retrieve data to be entered into the database
 }
 
 bool dbase::sQuery( std::string data, std::string table, std::string column ) {

@@ -37,6 +37,7 @@ int main() {
 	std::cout<< "GC State: " << services << std::endl;
 	std::cout<<"Number of Hard Drives: " << dnum << std::endl;
 	dbase thread;
+	thread.getQueryData( buffer.Srstate, buffer.Sstype, buffer.Ssite, buffer.Shname, buffer.Satype, buffer.Sservices, buffer.Sanum, buffer.Svarfill, buffer.Sdnum ); 
 	thread.runQuery();
 	char testchar;
 	std::cin>> testchar;
