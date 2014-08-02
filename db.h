@@ -27,7 +27,7 @@ class dbase {
 		void insert();
 		void update();
 
-}thread;
+};
 void dbase::runQuery() {
 	if ( checkExists( inval[1] ) == true ) {
 		update();
