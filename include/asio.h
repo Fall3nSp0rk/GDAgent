@@ -9,8 +9,8 @@
 #include<boost/smart_ptr.hpp>
 #include<boost/asio.hpp>
 #include<boost/thread/thread.hpp>
-#include"read.h"
-#include"db.h"
+//#include"read.h"
+//#include"db.h"
 
 using boost::asio::ip::tcp;
 
@@ -21,14 +21,14 @@ typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
 
 
-void handle_data( int buffer_data[max_length] ) {
-	serial buffer;
-	buffer.readBits( buffer_data );
-	buffer.deSerialize();
-	dbase thread;
-	thread.getQueryData( buffer.Srstate, buffer.Sstype, buffer.Ssite, buffer.Shname, buffer.Satype, buffer.Sservices, buffer.Sanum, buffer.Svarfill, buffer.Sdnum );
-	thread.runQuery();
-}
+//void handle_data( int buffer_data[max_length] ) {
+//	serial buffer;
+//	buffer.readBits( buffer_data );
+//	buffer.deSerialize();
+//	dbase thread;
+//	thread.getQueryData( buffer.Srstate, buffer.Sstype, buffer.Ssite, buffer.Shname, buffer.Satype, buffer.Sservices, buffer.Sanum, buffer.Svarfill, buffer.Sdnum );
+//	thread.runQuery();
+//}
 
 
 void session( socket_ptr sock ) {
@@ -37,23 +37,20 @@ void session( socket_ptr sock ) {
 			char data[max_length];
 			boost::system::error_code error;
 			size_t length = sock->read_some( boost::asio::buffer( data ), error );
+			for( int i =0; i < max_length; i++) {
+				std::cout<<data[i];
+			}
 			if( error == boost::asio::error::eof ) { // in original program, this is supposed to close the thread, but I'll have it pass it's data onto another class. thread will terminate AFTER completion
 				break; // connection closed cleanly by peer
 			}
 			else if( error ) {
 				throw boost::system::system_error( error ); //some other error
 			}
-			boost::asio::write( *sock, boost::asio::buffer( data, length) );
-			int data_stream[max_length];
-			for ( int i = 0; i < max_length; i++ ) {
-				data_stream[i] = int(data[i]);
-			}
-			serial buffer;
-			buffer.readBits( data_stream );
-			buffer.deSerialize();
-			dbase db;
-			db.getQueryData( buffer.Srstate, buffer.Sstype, buffer.Ssite, buffer.Shname, buffer.Satype, buffer.Sservices, buffer.Sanum, buffer.Svarfill, buffer.Sdnum );
-			db.runQuery();
+			char cont[max_length] = { '/', '\r',  '1', '0', '0', ' ', 'C', 'o', 'n', 't', 'i', 'n', 'u', 'e', '\r', '\n' };
+
+			size_t len = sizeof(cont);
+			boost::asio::write( *sock, boost::asio::buffer( cont, len) );
+			//std::cout<<length;
 		}
 	}
 	catch( std::exception& e ) {
@@ -69,5 +66,4 @@ void server( boost::asio::io_service& io_service, short port ) {
 		boost::thread t( boost::bind( session, sock ) );
 	}
 }
-
 

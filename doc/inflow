@@ -51,7 +51,7 @@ char buffer[1024]
 		-> 0 = Recovery not running.
 		-> 1 = Recover running and healthy
 		-> 2 = Recovery running, but defunct processes found. (infected)
-		-> 3 = Recovery has gone defunct (zombie/undead)
+		-> 3 = Recovery has gone defunct (defunt)
 	-> buffer[10] = server_code[4] (number of drives)
 		-> 0 = "12" (12 drive server)
 		-> 1 = "36" (36 drive server)
@@ -179,7 +179,7 @@ int server_code[8]
 		-> 0 = Recovery not running.
 		-> 1 = Recover running and healthy
 		-> 2 = Recovery running, but defunct processes found. (infected)
-		-> 3 = Recovery has gone defunct (zombie/undead)
+		-> 3 = Recovery has gone defunct (defunct)
 	-> server_code[4] = number of drives - 0-2
 		-> 0 = other
 		-> 1 = 12 drives
@@ -233,3 +233,5 @@ int server_code[8]
 
 
 	info on gn services
+
+~~~~~~~~~~~~~I HAVE NO CLUE BECAUSE NOBODY RESPONDS TO MY QUESTIONS~~~~~~~~~~~~~~~~~~~~~~~~~~~
