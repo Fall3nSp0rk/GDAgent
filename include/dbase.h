@@ -5,12 +5,13 @@ const char dbuser[] = "GigaDash";
 const char dbpass[] = "GigaDash123";
 const char dbname[] = "gigadash";
 const char dbhost[] = "localhost";
+//#include"serial.h"
 
-class dbase : protected serial  {
+class dbase{
 	public:
 		dbase();
 		void runQuery();
-		bool getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, int vfill, int dnum );
+		bool getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, std::string Fshanme, int vfill, int dnum );
 	private:
 		bool sQuery( std::string data, std::string table, std::string column );
 		bool checkExists( std::string site );

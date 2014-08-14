@@ -1,40 +1,21 @@
 // read.h
 // contains functions for reading from buffer.
-#include<iostream>
-#include<string>
-#include<vector>
-#include<sstream>
-#include<iterator>
-#include<algorithm>
-#include<map>
-
 using std::vector;
-
-const int bsize = 1024;
-
-const int Sserverstart = 6;
-const int Sdbitstart = 11;
-const int Sslen = 9;
-const int Shlen = 4;
-const int Sdlen = 612;
-const int Smlen = 24;
-const int Sblen = 1024;
-
 typedef std::pair<int, int> RgCodeUidPair;
-
 class serial {
 	public:
 		serial();
-		void readBits( int buff[1024] );
+		void readBits( std::vector<int> buff );
 		void deSerialize();
 		std::string giveStrVal( std::string cval );
 		int giveIntVal( int cint );
-	protected:
+//	protected:
 		std::string Srstate;
 		std::string Sstype;
 		std::string Ssite;
 		std::string Shname;
 		std::string Smac;
+		std::string Sshname;
 		std::string Satype;
 		std::string Sservices;
 		std::string Sanum;
@@ -62,4 +43,4 @@ class serial {
 		vector<int> Smbits;
 		void debuf();
 	
-} buffer;
+};

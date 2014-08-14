@@ -8,9 +8,11 @@
 #include<vector>
 #include<iomanip>
 #include"dbase.h"
-#include"serial.h"
+#include"log.h"
+//#include"serial.h"
 void dbase::runQuery() {
-	if ( checkExists( inval[1] ) == true ) {
+	bool ex = checkExists( inval[1] );
+	if ( ex == true ) {
 		update();
 	}
 	else {
@@ -29,10 +31,10 @@ bool dbase::checkExists( std::string data ) {
 		std::stringstream res1;
 		for ( std::vector<mysqlpp::Row>::iterator it= res.begin(); it != res.end(); ++it ) {
 			mysqlpp::Row row = *it;
-			res1 << row[0] << std::endl;
+			res1 << row[0];
 		}
 		std::string result = res1.str();
-		std::cout<< result << std::endl;
+		log( result );
 
 		if ( result == inval[1] ) {
 			return true;
@@ -47,19 +49,20 @@ void dbase::update() {
 	mysqlpp::Connection con2( false );
 	if ( con2.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream uss;
-		uss<< " UPDATE '" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[2] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << inval[12] << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
+		uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << inval[12] << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
 		std::string upstr = uss.str();
+		log( upstr );
 		mysqlpp::Query query = con2.query( upstr );
 		mysqlpp::SimpleResult res = query.execute();
 		if ( res ) {
-			std::cout<< "Record updated sucessfully." << std::endl;
+			log( "Record updated sucessfully." );
 		}
 		else {
-			std::cerr<< "Error updating record." << std::endl;
+			log( "Error updating record." );
 		}
 	}
 	else {
-		std::cerr<< "Error establishing connection to database." << std::endl;
+		log( "Error establishing connection to database." );
 	}
 }
 
@@ -81,11 +84,11 @@ std::string dbase::getLocFromSite( std::string site ) {
 			return result;
 		} 
 		if ( conn.errnum() ) {
-			std::cerr << "Error Received in fetching a row: " << conn.error() << std::endl;
+			log( "Error Received in fetching a row." );
 			return "ERR";
 		}
 		else {
-			std::cerr << "Unknown Error Occurred or Unhandled Exception. " << std::endl;
+			log( "Unknown Error Occurred or Unhandled Exception." );
 			return "ERR";
 		}
 	}
@@ -106,21 +109,21 @@ void dbase::insert() {
 		iss<< mysqlpp::quote_only << "0" << ", NOW() );";
 		std::string is = iss.str();
 		mysqlpp::Query query = conn.query( is );
-		std::cout<< is << std::endl;
+		log( is );
 		mysqlpp::SimpleResult res = query.execute();
 		if( res ) {
-			std::cout<< "Data inserted successfully." << std::endl;
+			log( "Data inserted successfully." );
 		}
 		else {
-			std::cerr<< "Failed to add server to database." << std::endl;
+			log( "Failed to add server to database." );
 		}
 	}
 	else {
-		std::cerr<< "Failed to connect to database " << dbname << ". Please ensure mysql is running, and that your credentials are correct." << std::endl;
+		log( "Failed to connect to database. Please ensure mysql is running, and that your credentials are correct." );
 	}
 }
 
-bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, int vfill, int dnum ) {
+bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, std::string Fshname, int vfill, int dnum ) {
 	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
 	std::string Fstype = buffer.giveStrVal( buffer.Sstype ); // server type
 	std::string Fsite = buffer.giveStrVal( buffer.Ssite ); // site
@@ -128,7 +131,7 @@ bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string F
 	std::string Fatype = buffer.giveStrVal( buffer.Satype ); // asset type
 	std::string Fsstate = buffer.giveStrVal( buffer.Sservices ); // service status
 	std::string Fanum = buffer.giveStrVal( buffer.Sanum ); // number of arrays */
-	std::string Fshorthost = "herp"; // host shortname
+	std::string Fshorthost = Fshname; // host shortname
 	std::string Floc = getLocFromSite( Fsite ); // location, queried from database based on string
 	std::string FOrt = "false"; // true/false value for whether there is an open RT for the server. default is false.
 	std::string Fmac = "aa:bb::cc:dd:ee:ff";
@@ -170,7 +173,7 @@ bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string F
 		std::cout<< inval[i];
 	}
 	std::cout<< std::endl << Fhost << std::endl; */
-	std::cout << buffer.giveStrVal( buffer.Shname ) << std::endl;
+//	std::cout << buffer.giveStrVal( buffer.Shname ) << std::endl;
 }
 
 void dbase::storeQueryData( std::string fsval, int posid ) {

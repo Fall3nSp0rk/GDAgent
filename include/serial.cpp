@@ -30,7 +30,7 @@ serial::serial(){ // overrides default constructor
 	Sdbits.resize(Sdlen);
 	Smbits.resize(Smlen);
 }
-void serial::readBits( int buff[1024] ){
+void serial::readBits( std::vector<int> buff ){
 	for ( int i = 0; i < 1024; i++ ) {
 		Snbuff[i] = buff[i];
 	}
@@ -176,7 +176,7 @@ std::string serial::readSType( const vector<int> &sbits ) {
 
 
 void serial::readAType( const vector<int> &sbits ) {
-	Satype = "Server";
+	Satype = "server";
 	// Asset type isn't implemented. YET.
 	
 }
@@ -268,7 +268,7 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 
 
 std::string serial::getTLD( std::string fsite ) {
-	vector<std::string> gnsites{ "ams", "ams1", "ams2", "ams3", "dca", "dca1", "dca2", "dca3", "lax", "hkg", "aus2" };
+	vector<std::string> gnsites{ "AMS", "AMS1", "AMS2", "AMS3", "DCA", "DCA1", "DCA2", "DCA3", "LAX", "HKG", "AUS2" };
 	if ( std::find(gnsites.begin(), gnsites.end(), fsite) != gnsites.end()) { // gives the top level domain for the server.
 		return "giganews.com";
 	}
@@ -282,10 +282,13 @@ void serial::getHostName( vector<int> &fsbits, vector<unsigned long int> fhbits 
 	std::string tld = serial::getTLD( site );
 	std::string tid = serial::readType( Sstype );
 	std::string uid = serial::readID( fhbits, Sstype );
+	std::stringstream sss;
 	std::stringstream ss;
 	if ( tid != "na" ) {
 		ss << uid << "." << tid << "." << site << "." << tld; // stringstream ftw
 		Shname = ss.str();
+		sss << uid << "." << site;
+		Sshname = sss.str();
 	}
 	else {
 		ss << uid << "." << site << "." << tld;
