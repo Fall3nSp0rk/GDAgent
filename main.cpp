@@ -67,6 +67,7 @@ int charToInt( const char c ) {
 
 void session( socket_ptr sock ) {
 	try {
+		//int icont = 0;
 		for( ; ; ) {
 			char data[max_length];
 			boost::system::error_code error;
@@ -74,6 +75,7 @@ void session( socket_ptr sock ) {
 			std::stringstream ss( data );
 			std::vector<int> idata;
 			std::string s2 = ss.str();
+			ss.str("");
 			size_t p = s2.find( "\r\n\r\n" );
 			p = p + 4;
 			s2.erase( 0, p );
@@ -87,16 +89,19 @@ void session( socket_ptr sock ) {
 			//for( int i =0; i < max_length; i++) {
 			//	std::cout<< data[i];
 			//}
-			if( error == boost::asio::error::eof ) { // in original program, this is supposed to close the thread, but I'll have it pass it's data onto another class. thread will terminate AFTER completion
-				break; // connection closed cleanly by peer
+			if( error == boost::asio::error::eof ) {
+				break;
 			}
 			else if( error ) {
 				throw boost::system::system_error( error ); //some other error
 			}
 			char cont[max_length] = { '/', '\r',  '1', '0', '0', ' ', 'C', 'o', 'n', 't', 'i', 'n', 'u', 'e', '\r', '\n' };
 
-			size_t len = sizeof(cont);
-			boost::asio::write( *sock, boost::asio::buffer( cont, len) );
+			//size_t len = sizeof(cont);
+			//if( icont == 0 ) {
+			//	boost::asio::write( *sock, boost::asio::buffer( cont, len) );
+			//}
+			//icont++;
 		}
 	}
 	catch( std::exception& e ) {
@@ -136,7 +141,7 @@ bool seedDaemon() {
 
 
 int main( ) {
-	seedDaemon();
+	//seedDaemon();
 	try{
 		using boost::asio::ip::tcp;
 		char listen_port[] = "8000";

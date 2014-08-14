@@ -7,7 +7,7 @@ LDLIBS=$(shell root-config --libs) -L/usr/lib/ -L/usr/lib/mysql -I/usr/lib/boost
 OBJS=obj/$(asio.o, )
 
 all: main.o serial.o dbase.o
-	g++ --std=c++0x -Wall -Wextra obj/main.o obj/dbase.o obj/serial.o -o GDAgent -g -L/obj -L/usr/lib/ -L/usr/lib/mysql/ -I/usr/include/mysql -lmysqlpp -lm -lnsl -lz -I/usr/include/mysql++/ -lmysqlpp -L/usr/lib/boost_1_47_0/ -lboost_thread  -L/usr/lib/boost_1_47_0/ -lboost_system
+	g++ --std=c++0x -Wall -Wextra obj/main.o obj/dbase.o obj/serial.o -o GDAgent -g -L/obj -L/usr/lib/ -L/usr/lib/mysql/ -I/usr/include/mysql -lmysqlpp -lm -lnsl -lz -I/usr/include/mysql++/ -lmysqlpp -L/usr/lib/boost_1_47_0/ -lboost_thread-mt  -L/usr/lib/boost_1_47_0/ -lboost_system-mt
 
 main.o: include/serial.h  include/dbase.h
 	g++ --std=c++0x main.cpp -o GDAgent obj/serial.o obj/dbase.o obj/log.o -g -I/usr/include/mysql -I/usr/include/mysql++/ -I/usr/lib/boost_1_47_0/ -lmysqlpp -lnsl -lz -lm -L/usr/lib64/ -L/usr/lib/mysql/ -L/usr/lib64/ -lboost_thread -lboost_system

@@ -8,17 +8,20 @@
 #include<algorithm>
 #include<map>
 #include"serial.h"
+#include"log.h"
+#include<iomanip>
 
 using std::vector;
 
 const int bsize = 1024;
 
 const int Sserverstart = 6;
-const int Sdbitstart = 11;
+const int Smacstart = 18;
+const int Sdbitstart = 590;
 const int Sslen = 9;
 const int Shlen = 4;
 const int Sdlen = 612;
-const int Smlen = 24;
+const int Smlen = 36;
 const int Sblen = 1024;
 
 typedef std::pair<int, int> RgCodeUidPair;
@@ -44,6 +47,11 @@ void serial::readBits( std::vector<int> buff ){
 		Ssbits[i] = buff[j];
 		j++;
 	}
+	int f = Smacstart;
+	for ( int i = 0; i < Smlen; i++ ) {
+		Smbits[i] = buff[f];
+		f++;
+	}
 	int m = Sdbitstart;
 	for ( int i = 0; i < Sdlen; i++ ) {
 		Sdbits[i] = buff[m];
@@ -62,15 +70,25 @@ int serial::giveIntVal( int cint ) { //for copying values
 
 // I have no idea if this will work
 void serial::deSerialize() {
+	std::cout<<"1" << std::endl;
 	Ssite = readSite( Ssbits );
+	std::cout<<"2"<<std::endl;
 	Sstype = readSType( Ssbits );
+	std::cout<<"3"<<std::endl;
 	readGC( Ssbits );
+	std::cout<<"4"<<std::endl;
 	readRecover( Ssbits );
+	std::cout<<"5"<<std::endl;
 	getHostName( Ssbits, Shbits );
+	std::cout<<"6"<<std::endl;
 	readDNum( Ssbits );
-	readMac( Smbits );
+	std::cout<<"7"<<std::endl;
+	Smac="aa:bb:cc:dd:ee:ff";
+	//readMac( Smbits );
+	std::cout<<"8"<<std::endl;
 	readAType( Ssbits );
-	debuf();
+	std::cout<<"9"<<std::endl;
+	//debuf();
 }
 
 void serial::debuf() {
@@ -81,7 +99,31 @@ void serial::debuf() {
 // function definitions for serial class follow here
 
 void serial::readMac( const vector<int> &mbits ) {
-	Smac = "Not Implemented"; // haven't implemented this yet.
+	std::ostringstream strm;
+	std::stringstream macaddr;
+	std::stringstream m;
+	for( int i = 0; i < 36; i++ ){
+		m<<mbits[i];
+	}
+	std::string mm = m.str();
+	log( mm );
+	for(int nMAC = 0; nMAC < 6; nMAC++) {
+		int f = 0;
+		std::string fmac = "";
+		for( int i = 0; i < 3; i++ ) {
+			macaddr<< mbits[f];
+			f++;
+		}
+		fmac = macaddr.str();
+		macaddr.str("");
+		strm << std::hex << std::setfill('0') << fmac;
+		if( nMAC < 5 ) {
+			strm<< ":";
+		}
+	}
+	Smac = strm.str();
+	log( Smac );
+//convert to uppercase
 }
 
 void serial::readGC( const vector<int> &fsbits ) {
