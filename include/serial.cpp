@@ -10,9 +10,7 @@
 #include"serial.h"
 #include"log.h"
 #include<iomanip>
-
 using std::vector;
-
 const int bsize = 1024;
 
 const int Sserverstart = 6;
@@ -25,8 +23,10 @@ const int Smlen = 36;
 const int Sblen = 1024;
 
 typedef std::pair<int, int> RgCodeUidPair;
+logger serlogger;
 
 serial::serial(){ // overrides default constructor
+	serlogger.log( "serial object initialized.", 0 );
 	Snbuff.resize(Sblen);
 	Ssbits.resize(Sslen);
 	Shbits.resize(Shlen);
@@ -34,6 +34,7 @@ serial::serial(){ // overrides default constructor
 	Smbits.resize(Smlen);
 }
 void serial::readBits( std::vector<int> buff ){
+	serlogger.log( "Called readBits", 0);
 	for ( int i = 0; i < 1024; i++ ) {
 		Snbuff[i] = buff[i];
 	}
@@ -57,12 +58,15 @@ void serial::readBits( std::vector<int> buff ){
 		Sdbits[i] = buff[m];
 		m++;
 	}
+	serlogger.log( "readBits() exited.", 0 );
 }
 std::string serial::giveStrVal( std::string cval ) {
+	serlogger.log( "giveStrVal() called.", 0 );
 	std::string aval = cval;
 	return aval;
 }
 int serial::giveIntVal( int cint ) { //for copying values
+	serlogger.log( "giveIntVal() called.", 0 );
 	int aint = cint;
 	return aint;
 }
@@ -70,28 +74,22 @@ int serial::giveIntVal( int cint ) { //for copying values
 
 // I have no idea if this will work
 void serial::deSerialize() {
-	std::cout<<"1" << std::endl;
-	Ssite = readSite( Ssbits );
-	std::cout<<"2"<<std::endl;
-	Sstype = readSType( Ssbits );
-	std::cout<<"3"<<std::endl;
+	serlogger.log( "deSerialize() called.", 0 );
+	Ssite = "AMS3"; // readSite( Ssbits );
+	Sstype = "r"; // readSType( Ssbits );
 	readGC( Ssbits );
-	std::cout<<"4"<<std::endl;
 	readRecover( Ssbits );
-	std::cout<<"5"<<std::endl;
 	getHostName( Ssbits, Shbits );
-	std::cout<<"6"<<std::endl;
 	readDNum( Ssbits );
-	std::cout<<"7"<<std::endl;
 	Smac="aa:bb:cc:dd:ee:ff";
 	//readMac( Smbits );
-	std::cout<<"8"<<std::endl;
 	readAType( Ssbits );
-	std::cout<<"9"<<std::endl;
 	//debuf();
+	serlogger.log( "deSerialize() completed.", 0 );
 }
 
 void serial::debuf() {
+	serlogger.log( "debuf() called.", 0);
 	std::cout<< Ssite << std::endl;
 	std::cout<< Sstype << std::endl;
 	std::cout<< Shname << std::endl;
@@ -99,6 +97,7 @@ void serial::debuf() {
 // function definitions for serial class follow here
 
 void serial::readMac( const vector<int> &mbits ) {
+	serlogger.log( "readMac() called.", 0 );
 	std::ostringstream strm;
 	std::stringstream macaddr;
 	std::stringstream m;
@@ -106,7 +105,7 @@ void serial::readMac( const vector<int> &mbits ) {
 		m<<mbits[i];
 	}
 	std::string mm = m.str();
-	log( mm );
+	serlogger.log( mm, 1 );
 	for(int nMAC = 0; nMAC < 6; nMAC++) {
 		int f = 0;
 		std::string fmac = "";
@@ -122,11 +121,16 @@ void serial::readMac( const vector<int> &mbits ) {
 		}
 	}
 	Smac = strm.str();
-	log( Smac );
+	std::stringstream lgmsg;
+	lgmsg << "Mac address of server " << Shname << " should be " << Smac << ".\n";
+	std::string ll = lgmsg.str();
+	serlogger.log( ll, 1 );
 //convert to uppercase
 }
 
 void serial::readGC( const vector<int> &fsbits ) {
+	serlogger.log( "readGC() called.", 0);
+
 	switch ( fsbits[2] ) {
 		case 0:
 			Sservices = "Not Running";
@@ -139,15 +143,17 @@ void serial::readGC( const vector<int> &fsbits ) {
 			break;
 		default:
 			Sservices = "Err";
-			//throw(1002); // throw an exception if it gets data other than what it expects.
+			serlogger.log( "error on line 147: serial.cpp: Invalid value received for Sservices.", 3);
 			break;
 	}
 	//catch( int e ) {
 	//	std::cout<< "An Exception has occurred. Error " << e << "." << std::endl;
 	//}
+	serlogger.log( "readGC() completed.", 0);
 }
 
 void serial::readDNum( const vector<int> &sbits ) {
+	serlogger.log( "readDNum() called.", 0 );
 	switch( sbits[4] ) {
 		case 0:
 			Sdnum = 12;
@@ -160,30 +166,38 @@ void serial::readDNum( const vector<int> &sbits ) {
 			break;
 		case 3:
 			Sdnum = 0; // should throw an exception
-//			throw(1001);
+			serlogger.log( "Error on line 156: serial.cpp: invalid value (3) received for Sdnum.", 3 );
 			break;
 		default: // should only occur if no data is received, should throw an exception
 			Sdnum = 0;
-			//std::throw(1000);
+			serlogger.log( "Error on line 156: serial.cpp: invalid value (?) received for Sdnum.", 3 );
 			break;
 	}
 //	catch( int e) {
+//
 //		std::cout<< "An Exception has occurred. Error " << e << "." << std::endl;
 //	}
+	serlogger.log( "readDnum() completed.", 0 );
 }
 
 std::string serial::readType( std::string fstype ) {
+	serlogger.log( "readType() called.", 0 );
 	if ( fstype == "r" || fstype == "h" || fstype == "t" || fstype == "serv" ) {
+		serlogger.log( "Determined type to be 'gc'.", 1 );
 		return "gc";
 	}
 	else if ( fstype == "backlog" || fstype == "border" || fstype == "num" || fstype == "xref" ) {
+		serlogger.log( "Determined type to be 'nntp'.", 1 );
 		return "nntp";
 	}
 	else {
+		serlogger.log( "No type found.", 1 );
 		return "na";
 	}
+	serlogger.log( "readType() completed.", 0 );
 }
 std::string serial::readSType( const vector<int> &sbits ) {
+	serlogger.log( "readSType() called.", 0 );
 	 int stcode = sbits[0];
 	int uid = sbits[1];
 	static std::map<RgCodeUidPair, std::string> cachedData;
@@ -212,18 +226,21 @@ std::string serial::readSType( const vector<int> &sbits ) {
 	}
 	auto it = cachedData.find(std::make_pair(stcode, uid));
 	if (  it != cachedData.end()) {
+		serlogger.log( "readSType() completed.", 0 );
 		return it->second;
 	}
 }
 
 
 void serial::readAType( const vector<int> &sbits ) {
+	serlogger.log( "Determined asset-type to be 'server'.", 1 );
 	Satype = "server";
 	// Asset type isn't implemented. YET.
 	
 }
 
 void serial::readRecover( const vector<int> &sbits ) {
+	serlogger.log( "readRecover() called.", 0 );
 	int rcode = sbits[3];
 	switch( rcode ) { // reads whether or not the server is currently recovering.
 		case 0:
@@ -239,15 +256,14 @@ void serial::readRecover( const vector<int> &sbits ) {
 			Srstate = "Defunct";
 			break;
 		default:
-	//		throw(1003);
+			serlogger.log( "Error on line 243: serial.cpp: Invalid data (?) received for Srstate.", 2 );
 			break;
 	}
-	//catch( int e ) {
-	//	std::cout<< "An Exception has occurred. Error " << e << "." << std::endl;
-	//}
+	serlogger.log( "readRecover() completed.", 0 );
 }
 
 std::string serial::readID(  vector<unsigned long int> hbits, std::string fstype ) {
+	serlogger.log( "readID() called.", 0 );
 	std::stringstream result;
 	std::copy(hbits.begin(), hbits.end(), std::ostream_iterator<int>(result, ""));
 	std::string idnum = result.str();
@@ -260,6 +276,7 @@ std::string serial::readID(  vector<unsigned long int> hbits, std::string fstype
 	std::stringstream ss;
 	std::string id;
 	int idlen = idnum.length();
+	serlogger.log( "readID completed.", 0 );
 	if ( idlen < 2 && ( fstype == "h" || fstype == "r" || fstype == "t" ) ) { // and add them back in if it's a single-digit t, h, or r server
 		ss << fstype << "0" << idnum;
 		id = ss.str();
@@ -274,6 +291,7 @@ std::string serial::readID(  vector<unsigned long int> hbits, std::string fstype
 
 // Reads the site identifier code
 std::string serial::readSite( const vector<int> &fsbits ) {
+	serlogger.log( "readSite() called.", 0 );
 	// reads the only two numbers we care about out of the server information bits
 	int rgcode = fsbits[5];
 	int uid = fsbits[6];
@@ -306,20 +324,25 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 	if ( it != cachedData.end()) {
 		return it->second;
 	}
+	serlogger.log( "readSite() executed successfully.", 0 );
 }
 
 
 std::string serial::getTLD( std::string fsite ) {
+	serlogger.log( "getTLD() called.", 0 );
 	vector<std::string> gnsites{ "AMS", "AMS1", "AMS2", "AMS3", "DCA", "DCA1", "DCA2", "DCA3", "LAX", "HKG", "AUS2" };
 	if ( std::find(gnsites.begin(), gnsites.end(), fsite) != gnsites.end()) { // gives the top level domain for the server.
+		serlogger.log( "Determined TLD to be giganews.com.", 1 );
 		return "giganews.com";
 	}
 	else {
+		serlogger.log( "Determined TLD to be goldenfrog.com.", 1 );
 		return "goldenfrog.com";
 	}
 }
 
 void serial::getHostName( vector<int> &fsbits, vector<unsigned long int> fhbits ) {
+	serlogger.log( "getHostName() called.", 0 );
 	std::string site = serial::readSite( fsbits );
 	std::string tld = serial::getTLD( site );
 	std::string tid = serial::readType( Sstype );
@@ -336,5 +359,6 @@ void serial::getHostName( vector<int> &fsbits, vector<unsigned long int> fhbits 
 		ss << uid << "." << site << "." << tld;
 		Shname = ss.str();
 	}
+	serlogger.log( "getHostName() completed.", 0 );
 }
 
