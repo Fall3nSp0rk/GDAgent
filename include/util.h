@@ -1,5 +1,9 @@
+#ifndef __UTIL_H
+#define __UTIL_H
 #include<iostream>
-
+#include<algorithm>
+#include<string.h>
+#include<stdio.h>
 inline int ccInt( const char c ) {
         switch (c) {
         case '0':
@@ -27,3 +31,20 @@ inline int ccInt( const char c ) {
         }
 }
 
+using namespace std;
+inline char *Shuffle( char *dest, const char *src ) {
+	return ( char * ) memmove( dest, src, strlen(src) + sizeof(char));
+}
+
+inline bool IsNumeric( const char c ) {
+	return isdigit(c) || c == '-' || c == '.';
+}
+
+inline void delNonNumericChar( char *s ) {
+	for ( char *p = s + strlen(s) - 1; p >= s; p-- ) {
+		if( !IsNumeric(*p) ) {
+			Shuffle(p, p+1);
+		}
+	}
+}
+#endif

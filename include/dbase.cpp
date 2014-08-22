@@ -114,7 +114,7 @@ std::string dbase::getLocFromSite( std::string site ) {
 }
 
 void dbase::insert() {
-	dbaselogger.log( "inster() called.", 0 );
+	dbaselogger.log( "insert() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream iss;

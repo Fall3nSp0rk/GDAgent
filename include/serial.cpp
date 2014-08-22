@@ -10,6 +10,7 @@
 #include"serial.h"
 #include"log.h"
 #include<iomanip>
+#include<stdlib.h>
 using std::vector;
 const int bsize = 1024;
 
@@ -19,9 +20,10 @@ const int Sdbitstart = 590;
 const int Sslen = 9;
 const int Shlen = 4;
 const int Sdlen = 612;
-const int Smlen = 36;
+const int Smlen = 18;
 const int Sblen = 1024;
 
+typedef std::pair<int, int> TPCodeUidPair;
 typedef std::pair<int, int> RgCodeUidPair;
 logger serlogger;
 
@@ -33,7 +35,7 @@ serial::serial(){ // overrides default constructor
 	Sdbits.resize(Sdlen);
 	Smbits.resize(Smlen);
 }
-void serial::readBits( std::vector<int> buff ){
+void serial::readBits( const std::vector<int> &buff ){
 	serlogger.log( "Called readBits", 0);
 	for ( int i = 0; i < 1024; i++ ) {
 		Snbuff[i] = buff[i];
@@ -75,16 +77,14 @@ int serial::giveIntVal( int cint ) { //for copying values
 // I have no idea if this will work
 void serial::deSerialize() {
 	serlogger.log( "deSerialize() called.", 0 );
-	Ssite = "AMS3"; // readSite( Ssbits );
-	Sstype = "r"; // readSType( Ssbits );
+	Sstype = readSType( Ssbits );
 	readGC( Ssbits );
 	readRecover( Ssbits );
 	getHostName( Ssbits, Shbits );
 	readDNum( Ssbits );
-	Smac="aa:bb:cc:dd:ee:ff";
-	//readMac( Smbits );
+	readMac( Smbits );
 	readAType( Ssbits );
-	//debuf();
+	debuf();
 	serlogger.log( "deSerialize() completed.", 0 );
 }
 
@@ -99,33 +99,34 @@ void serial::debuf() {
 void serial::readMac( const vector<int> &mbits ) {
 	serlogger.log( "readMac() called.", 0 );
 	std::ostringstream strm;
-	std::stringstream macaddr;
+	char macbit[3];
 	std::stringstream m;
-	for( int i = 0; i < 36; i++ ){
+	for( int i = 0; i < 18; i++ ){
 		m<<mbits[i];
 	}
 	std::string mm = m.str();
+	m.str("");
 	serlogger.log( mm, 1 );
 	for(int nMAC = 0; nMAC < 6; nMAC++) {
 		int f = 0;
 		std::string fmac = "";
 		for( int i = 0; i < 3; i++ ) {
-			macaddr<< mbits[f];
+			macbit[i] = mbits[f];
 			f++;
 		}
-		fmac = macaddr.str();
-		macaddr.str("");
-		strm << std::hex << std::setfill('0') << fmac;
+		int num = atoi( macbit );
+		strm << std::setfill('0') << std::setw(2) << std::hex << num;
 		if( nMAC < 5 ) {
 			strm<< ":";
 		}
 	}
 	Smac = strm.str();
+	strm.str("");
 	std::stringstream lgmsg;
 	lgmsg << "Mac address of server " << Shname << " should be " << Smac << ".\n";
 	std::string ll = lgmsg.str();
+	lgmsg.str("");
 	serlogger.log( ll, 1 );
-//convert to uppercase
 }
 
 void serial::readGC( const vector<int> &fsbits ) {
@@ -198,9 +199,14 @@ std::string serial::readType( std::string fstype ) {
 }
 std::string serial::readSType( const vector<int> &sbits ) {
 	serlogger.log( "readSType() called.", 0 );
-	 int stcode = sbits[0];
+	int stcode = sbits[0];
 	int uid = sbits[1];
-	static std::map<RgCodeUidPair, std::string> cachedData;
+	std::stringstream debugsbitsvalue;
+	debugsbitsvalue << sbits[0] << sbits[1];
+	std::string tdebug = debugsbitsvalue.str();
+	debugsbitsvalue.str("");
+	// serlogger.log( tdebug, 0 ); 
+	static std::map<TPCodeUidPair, std::string> cachedData;
 	if ( cachedData.empty() ) {
 		cachedData.insert(std::make_pair(std::make_pair(0,0), "db")); // database server
 		cachedData.insert(std::make_pair(std::make_pair(0,2), "cruncher")); // cruncher
@@ -267,6 +273,7 @@ std::string serial::readID(  vector<unsigned long int> hbits, std::string fstype
 	std::stringstream result;
 	std::copy(hbits.begin(), hbits.end(), std::ostream_iterator<int>(result, ""));
 	std::string idnum = result.str();
+	result.str("");
 	//std::cout<<idnum;
 	//remove leading zeroes from identifier....
 	std::string::size_type pos = idnum.find_first_not_of( "0", 0 );
@@ -276,15 +283,18 @@ std::string serial::readID(  vector<unsigned long int> hbits, std::string fstype
 	std::stringstream ss;
 	std::string id;
 	int idlen = idnum.length();
-	serlogger.log( "readID completed.", 0 );
 	if ( idlen < 2 && ( fstype == "h" || fstype == "r" || fstype == "t" ) ) { // and add them back in if it's a single-digit t, h, or r server
 		ss << fstype << "0" << idnum;
 		id = ss.str();
+		ss.str("");
+		serlogger.log("readID() completed.", 0);
 		return id;
 	}
 	else {
 		ss << fstype << idnum;
 		id = ss.str();
+		ss.str("");
+		serlogger.log( "readID() completed.", 0);
 		return id;
 	}
 }
@@ -322,9 +332,9 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 	}
 	auto it = cachedData.find(std::make_pair(rgcode, uid));
 	if ( it != cachedData.end()) {
+		serlogger.log( "readSite() executed successfully.", 0 );
 		return it->second;
 	}
-	serlogger.log( "readSite() executed successfully.", 0 );
 }
 
 
@@ -343,20 +353,31 @@ std::string serial::getTLD( std::string fsite ) {
 
 void serial::getHostName( vector<int> &fsbits, vector<unsigned long int> fhbits ) {
 	serlogger.log( "getHostName() called.", 0 );
-	std::string site = serial::readSite( fsbits );
-	std::string tld = serial::getTLD( site );
+	Ssite = serial::readSite( fsbits );
+	std::string tld = serial::getTLD( Ssite );
 	std::string tid = serial::readType( Sstype );
 	std::string uid = serial::readID( fhbits, Sstype );
 	std::stringstream sss;
 	std::stringstream ss;
 	if ( tid != "na" ) {
-		ss << uid << "." << tid << "." << site << "." << tld; // stringstream ftw
+		ss << uid << "." << tid << "." << Ssite << "." << tld; // stringstream ftw
 		Shname = ss.str();
-		sss << uid << "." << site;
+		ss.str("");
+		std::stringstream lstream;
+		lstream << "Determined Hostname to be: " << Shname << ".";
+		std::string lstr = lstream.str();
+		lstream.str("");
+		serlogger.log( lstr, 1 );
+		sss << uid << "." << Ssite;
 		Sshname = sss.str();
+		sss.str("");
+		lstream << "Determined Host Shortname to be: " << Sshname << ".";
+		lstr = lstream.str();
+		lstream.str("");
+		serlogger.log( lstr, 1 );
 	}
 	else {
-		ss << uid << "." << site << "." << tld;
+		ss << uid << "." << Ssite << "." << tld;
 		Shname = ss.str();
 	}
 	serlogger.log( "getHostName() completed.", 0 );

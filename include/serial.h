@@ -5,7 +5,7 @@ typedef std::pair<int, int> RgCodeUidPair;
 class serial {
 	public:
 		serial();
-		void readBits( std::vector<int> buff );
+		void readBits( const std::vector<int> &buff );
 		void deSerialize();
 		std::string giveStrVal( std::string cval );
 		int giveIntVal( int cint );
