@@ -22,7 +22,7 @@ void dbase::runQuery() {
 	}
 	dbaselogger.log( "runQuery() completed.", 0 );
 }
-bool dbase::checkExists( std::string data ) {
+bool dbase::checkExists( const std::string &data ) {
 	dbaselogger.log( "checkExists() called.", 0 );
 	dbaselogger.log ( "Checking if host already in Database...", 1 );
 	mysqlpp::Connection con3( false );
@@ -78,7 +78,7 @@ void dbase::update() {
 	dbaselogger.log( "update() completed.", 0 );
 }
 
-std::string dbase::getLocFromSite( std::string site ) {
+std::string dbase::getLocFromSite( const std::string &site ) {
 	dbaselogger.log( "getLocFromSite() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
@@ -140,7 +140,7 @@ void dbase::insert() {
 	dbaselogger.log("insert() completed.", 0 );
 }
 
-bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string Fsite, std::string Fhost, std::string Fatype, std::string Fsstate, std::string Fanum, std::string Fshname, int vfill, int dnum ) {
+bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshname, const std::string &Fmac, const int &vfill, const int &dnum ) {
 	dbaselogger.log( "getQueryData() called.", 0 );
 	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
 	std::string Fstype = buffer.giveStrVal( buffer.Sstype ); // server type
@@ -152,7 +152,6 @@ bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string F
 	std::string Fshorthost = Fshname; // host shortname
 	std::string Floc = getLocFromSite( Fsite ); // location, queried from database based on string
 	std::string FOrt = "false"; // true/false value for whether there is an open RT for the server. default is false.
-	std::string Fmac = "aa:bb::cc:dd:ee:ff";
 	std::stringstream ssfill;
 	ssfill << vfill; // /ivar fill percentage
 	std::string Fvfill = ssfill.str();
@@ -167,7 +166,7 @@ bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string F
 		storeQueryData( sstype, 4 );
 	}
 	else {
-		storeQueryData( Fstype, 5 );
+		storeQueryData( Fstype, 4 );
 	}
 	int num = 5; // this is  temporary until I write it's hook in the serial class.
 	std::stringstream anum1;
@@ -196,7 +195,7 @@ bool dbase::getQueryData( std::string Frstate, std::string Fstype, std::string F
 	dbaselogger.log( "getQueryData() completed.", 0 );
 }
 
-void dbase::storeQueryData( std::string fsval, int posid ) {
+void dbase::storeQueryData( const std::string &fsval, const int &posid ) {
 	dbaselogger.log( "storeQueryData() called.", 0 );
 	inval[posid] = fsval;
 }
@@ -209,7 +208,7 @@ dbase::dbase() {
 	// getQueryData(); // retrieve data to be entered into the database
 }
 
-bool dbase::sQuery( std::string data, std::string table, std::string column ) {
+bool dbase::sQuery( const std::string &data, const std::string &table, const std::string &column ) {
 	dbaselogger.log( "sQuery() called.", 0 );
 	mysqlpp::Connection con( false ); // establish connection to db server
 	if ( con.connect( dbname, dbhost, dbuser, dbpass ) ) {

@@ -17,7 +17,7 @@ obj/dbase.o: include/dbase.cpp include/dbase.h include/serial.h include/log.h
 	g++ --std=c++0x -o obj/dbase.o -c include/dbase.cpp -g -I/usr/include/mysql++ -I/usr/include/mysql -I/usr/lib/boost_1_47_0/ -lmysqlpp -lnsl -lz -lm -lboost_thread -L/usr/lib/ -L/usr/lib/mysql/
 
 obj/serial.o: include/serial.cpp include/serial.h include/dbase.h
-	g++ --std=c++0x  -o obj/serial.o  -c include/serial.cpp -g -I/usr/include/mysql -I/usr/include/ -lmysqlpp -lnsl -lz -lm  -L/usr/lib/ -L/usr/lib/mysql/ -L/usr/include/boost_1_56_0/stage/lib/  -lboost_thread -lboost_system
+	g++ $(CPPFLAGS) -o obj/serial.o  -c include/serial.cpp $(LDFLAGS) $(LDLIBS)
 
 obj/config.o: include/ConfigFile.cpp include/ConfigFile.h obj/convert.o
 	g++ --std=c++0x -c include/ConfigFile.cpp -o obj/config.o

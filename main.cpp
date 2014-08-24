@@ -26,6 +26,7 @@
 #include"include/log.h"
 #include"include/util.h"
 #include<algorithm>
+#include<exception>
 using boost::asio::ip::tcp;
 
 const int max_length = 1024;
@@ -39,10 +40,15 @@ bool handle_data( std::vector<int>& buffer_data ) {
 		boost::system::error_code ec;
 		serial sbuff;
 		sbuff.readBits( buffer_data );
-		sbuff.deSerialize();
 		dbase thread;
-		thread.getQueryData( sbuff.Srstate, sbuff.Sstype, sbuff.Ssite, sbuff.Shname, sbuff.Satype, sbuff.Sservices, sbuff.Sanum, sbuff.Sshname, sbuff.Svarfill, sbuff.Sdnum );
-		thread.runQuery();
+		bool dsvalidated = sbuff.deSerialize();
+		if(!dsvalidated) {
+			GDLogger.log( "Deserialized data validation returned as false.", 3 );
+		}
+		else {
+			thread.getQueryData( sbuff.Srstate, sbuff.Sstype, sbuff.Ssite, sbuff.Shname, sbuff.Satype, sbuff.Sservices, sbuff.Sanum, sbuff.Sshname, sbuff.Smac, sbuff.Svarfill, sbuff.Sdnum ); // handing all the data off to the database module.
+			thread.runQuery();
+		}
 		if( !ec ) {
 			GDLogger.log( "handle_data() call completed without error.", 0 );
 			return true;
@@ -54,7 +60,7 @@ bool handle_data( std::vector<int>& buffer_data ) {
 	}
 	catch( std::exception& e ) {
 		std::stringstream errstr;
-		errstr << "Exception in thread: " << e.what() << "\n";
+		errstr << "Exception in thread: " << e.what();
 		std::string logentry = errstr.str();
 		errstr.str("");
 		GDLogger.log( logentry, 3 );
@@ -101,10 +107,23 @@ std::vector<int> sanData( char bdata[max_length] ) {
 	int s2l = s2.length();
 	std::vector<int> odata;
 	odata.resize( max_length );
+	GDLogger.log( s2, 0 );
 	for (int i = 0; i < max_length; i++ ) {
 		odata[i] = ccInt( s2[i] );
 	}
 	return odata;
+}
+bool valSerialData( const vector<int> &vdata ) {
+	if( (vdata[0] == 0 && vdata[1] == 0 )
+			&& ( vdata[5] == 1 && vdata[13] == 1)
+			//&& ( vdata[14] == 0 && vdata[15] == 1)
+			) {
+		GDLogger.log( "Datastream Validated.", 1 );
+		return true;
+	}
+	else {
+		return false;
+	}
 }
 
 void session( socket_ptr sock ) {
@@ -167,7 +186,15 @@ void session( socket_ptr sock ) {
 				idata[i] = ccInt( s2[i] );
 				
 			} */
-			if( !error && icont == 0 ) {
+			bool dvalid = valSerialData( idata );
+			if( !dvalid ) {
+				GDLogger.log("Data rejected by server.", 3 );
+			}
+			if( dvalid ) {
+				GDLogger.log("Valid Datastream accepted. Processing.", 1 );
+				inproc = handle_data( idata );
+			}
+			/* if( !error && icont == 0 ) {
 				std::string curtime = timestamp();
 				std::stringstream okmsg;
 				okmsg << "HTTP/1.1 200 OK \n Date: " << curtime << "\n";
@@ -180,16 +207,17 @@ void session( socket_ptr sock ) {
 				size_t oksize = sizeof(okma);
 				boost::asio::write( *sock, boost::asio::buffer( okma, oksize) );
 			}
-			
+			*/
 			if( inproc == true && error == boost::asio::error::eof ) { // if EOF reached and 
-				GDLogger.log( "Connection Terminated.", 1 );
+				GDLogger.log( "Connection Terminated, data processed.", 1 );
 				break;
 			}
+			else if( !inproc && error == boost::asio::error::eof  && icont > 0) {
+				GDLogger.log( "Connection Terminated before data was successfully processed.", 2 );
+				break;
+			 }
 			else if( error ) {
 				throw boost::system::system_error( error ); //some other error
-			}
-			if( idata[0] == 0 && idata[1] == 0 && inproc == false ) {
-				inproc = handle_data( idata );
 			}
 			icont++;
 		}
@@ -237,7 +265,7 @@ int main( ) {
 	logger MT;
 	MT.log( "GDAgent v 0.5 Started. Initializing.", 1 );
 	MT.log( "Daemonizing....", 1 );
-	// seedDaemon();
+	seedDaemon();
 	if( !er ) {
 		MT.log( "Daemonizing successful.", 1 );
 	}

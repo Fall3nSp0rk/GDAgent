@@ -224,8 +224,79 @@ int server_code[8]
 
 	drivebits
 
+		->drive_code[0] = drive number first digit
+		->drive_code[1] = drive number second digit
+			-> 00 = 0:sda
+			-> 01 = 1:sdb
+			-> 02 = 2:sdc
+			-> 03 = 3:sdd
+			-> 04 = 4:sde
+			-> 05 = 5:sdf
+			-> 06 = 6:sdg
+			-> 07 = 7:sdh
+			-> 08 = 8:sdi
+			-> 09 = 9:sdj
+			-> 10 = 10:sdk
+			-> 11 = 11:sdl
+			..
+			-> 35 = 35:sda_
+			-> 99 = empty (ignore slot)
+		->drive_code[3] = spool number first digit
+		->drive_code[4] = spool number second digit
+			-> 01 = spool 01 (self explanatory)
+			..
+			-> 36 = Spool 36
+			-> 00 = error
+		-> drive_code[5] = Drive health code
+			-> 0 = Drive missing or failed.
+			-> 1 = Healthy ( 1> pending/reallocated sectors )
+			-> 2 = Degraded ( 1<, <8 pending/reallocated sectors )
+			-> 3 = Critical ( 8< pending/reallocated sectors )
+		-> drive_code[6] = Spool fill percent first digit
+		-> drive_code[7] = Spool fill percent second digit
+		-> drive_code[8] = Spool fill percent third digit
+			-> 000 = 0%
+			-> 100 = 100% (self explanatory)
+		-> drive_code[9] = spool status
+			-> 0 = OFF
+			-> 1 = RW
+			-> 2 = NO/ERROR
+			-> 3 = RO
+			-> 4 = NO
+		-> drive_code[10] = current pending sectors first digit
+		-> drive_code[11] = current pending sectors second digit
+		-> drive_code[12] = current pending sectors third digit
+			-> 000 = 0 pending sectors
+			-> 999 = 999+ pending sectors (999 will be max value, we don't really care about anything above 99 pending sectors anyways)
+		-> drive_code[13] = current reallocated sectors first digit
+		-> drive_code[14] = re/all second digit
+		-> drive_code[15] = re/all third digit
+			-> 000 = 0 re/all sectors
+			-> 999 = 999+ re/all sectors. same as pend.
+		-> drive_code[16] = terminator (0)
 
 
+			ARRAY DESCRIPTION
+	buffer[37] = 1 start array descriptors
+	buffer[38] = number of arrays 1st digit
+	buffer[39] = number of arrays second digit
+	
+
+
+		-> array_code[0] = 9 (Array start 1)
+		-> array_code[1] = 9 (Array start 2) 
+		-> array_code[2] = array length first digit
+		-> array_code[3] = array length second digit - how many bits beyond this to read
+			-> 00 = you fucked up, throw an error.
+			-> 01 = You still fucked up, are you stupid? Error.
+			-> 02 = 2 drives in array (much better)
+			..
+			-> 36 = 36 drives in array (max value)
+			-> 37 = You're really dumb. throw an error.
+		-> array_code[4] = 9 (start member status)
+		-> array_code[5] = first member
+			-> 0 = faulty/failed/missing
+			-> 1 = Healthy and present
 
 
 
