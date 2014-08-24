@@ -1,5 +1,6 @@
 // db.h
 // MySQL database connections and DB search/parsing.
+// the final step of the data flow - everything ends up in an indexable mysql database in this module.
 
 #include<iostream>
 #include<sstream>
@@ -22,7 +23,7 @@ void dbase::runQuery() {
 	}
 	dbaselogger.log( "runQuery() completed.", 0 );
 }
-bool dbase::checkExists( const std::string &data ) {
+bool dbase::checkExists( const std::string &data ) { // check if the received data matches anything already in the database
 	dbaselogger.log( "checkExists() called.", 0 );
 	dbaselogger.log ( "Checking if host already in Database...", 1 );
 	mysqlpp::Connection con3( false );
@@ -54,7 +55,7 @@ bool dbase::checkExists( const std::string &data ) {
 	dbaselogger.log( "checkExists() completed.", 0 );
 }
 
-void dbase::update() {
+void dbase::update() { // update the selected entry in the database
 	dbaselogger.log( "update() called.", 0 );
 	dbaselogger.log( "Updating database entry.", 1 );
 	mysqlpp::Connection con2( false );
@@ -78,7 +79,7 @@ void dbase::update() {
 	dbaselogger.log( "update() completed.", 0 );
 }
 
-std::string dbase::getLocFromSite( const std::string &site ) {
+std::string dbase::getLocFromSite( const std::string &site ) { // use the site that is transmitted to determine what the region is
 	dbaselogger.log( "getLocFromSite() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
@@ -113,7 +114,7 @@ std::string dbase::getLocFromSite( const std::string &site ) {
 	dbaselogger.log( "getLocFromSite() completed.", 0 );
 }
 
-void dbase::insert() {
+void dbase::insert() { // insert server info into the mysql database (only if not already present)
 	dbaselogger.log( "insert() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
@@ -141,7 +142,7 @@ void dbase::insert() {
 }
 
 bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshname, const std::string &Fmac, const int &vfill, const int &dnum ) {
-	dbaselogger.log( "getQueryData() called.", 0 );
+	dbaselogger.log( "getQueryData() called.", 0 ); // takes all the deserialized data from the serial class and sorts them into containers in preparation of db injection
 	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
 	std::string Fstype = buffer.giveStrVal( buffer.Sstype ); // server type
 	std::string Fsite = buffer.giveStrVal( buffer.Ssite ); // site
@@ -200,7 +201,7 @@ void dbase::storeQueryData( const std::string &fsval, const int &posid ) {
 	inval[posid] = fsval;
 }
 
-dbase::dbase() {
+dbase::dbase() { // overrides default constructor for dbase class
 	dbaselogger.log( "Initializing Database Module.", 1 );
 	dbaselogger.log( "dbase() called.", 0 );
 	// initialize the size of the query data storage vector
@@ -208,8 +209,9 @@ dbase::dbase() {
 	// getQueryData(); // retrieve data to be entered into the database
 }
 
-bool dbase::sQuery( const std::string &data, const std::string &table, const std::string &column ) {
-	dbaselogger.log( "sQuery() called.", 0 );
+bool dbase::sQuery( const std::string &data, const std::string &table, const std::string &column ) { // runs a generic query 
+	dbaselogger.log( "sQuery() called.", 0 ); // ~not actually used~
+
 	mysqlpp::Connection con( false ); // establish connection to db server
 	if ( con.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream qss;

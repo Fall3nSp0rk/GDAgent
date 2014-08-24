@@ -1,8 +1,10 @@
-// asio.h
+// main.cpp
+// Main file for GDAgent. All the magic happens here.
 //
 // written using examples at: 
 // http://www.boost.org/doc/libs/1_52_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
 //
+//lot of includes here....
 #include<cstdlib>
 #include<iostream>
 #include<boost/bind.hpp>
@@ -30,35 +32,36 @@
 using boost::asio::ip::tcp;
 
 const int max_length = 1024;
-logger GDLogger;
+logger GDLogger; // initialize our logger, also reads from config file, globally. This means that all threads (should) be able to access this logger.
 
+// define the pointer to where socket data is being stored
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
-bool handle_data( std::vector<int>& buffer_data ) {
+bool handle_data( std::vector<int>& buffer_data ) { // data handling happens hhere
 	GDLogger.log( "handle_data() called.", 0 );
 	try {
-		boost::system::error_code ec;
-		serial sbuff;
-		sbuff.readBits( buffer_data );
-		dbase thread;
-		bool dsvalidated = sbuff.deSerialize();
-		if(!dsvalidated) {
+		boost::system::error_code ec; // declare an error object ot collect exceptions
+		serial sbuff; // declare a serial object
+		sbuff.readBits( buffer_data ); //read from buffer into saod object
+		dbase thread; // initalize db object
+		bool dsvalidated = sbuff.deSerialize(); // deserialize data
+		if(!dsvalidated) { // self explanatory
 			GDLogger.log( "Deserialized data validation returned as false.", 3 );
 		}
-		else {
+		else { // I hate this function. Reads from the serial object to the DB object.
 			thread.getQueryData( sbuff.Srstate, sbuff.Sstype, sbuff.Ssite, sbuff.Shname, sbuff.Satype, sbuff.Sservices, sbuff.Sanum, sbuff.Sshname, sbuff.Smac, sbuff.Svarfill, sbuff.Sdnum ); // handing all the data off to the database module.
-			thread.runQuery();
+			thread.runQuery(); // runs all the queries necessary to update or insert
 		}
 		if( !ec ) {
-			GDLogger.log( "handle_data() call completed without error.", 0 );
+			GDLogger.log( "handle_data() call completed without error.", 0 ); // if ec is still empty, we're done!
 			return true;
 		}
 		else {
-			GDLogger.log( "handle_data() call unsuccsessful, errors occurred.", 3 );
-			return true;
+			GDLogger.log( "handle_data() call unsuccsessful, errors occurred.", 3 ); // things broke~somewhere~, but not fatally
+			return true; 
 		}
 	}
-	catch( std::exception& e ) {
+	catch( std::exception& e ) { // catch allocation exceptions.
 		std::stringstream errstr;
 		errstr << "Exception in thread: " << e.what();
 		std::string logentry = errstr.str();
@@ -67,7 +70,7 @@ bool handle_data( std::vector<int>& buffer_data ) {
 	}
 }
 
-std::string timestamp() {
+std::string timestamp() { // needs to get moved to util.h as an inline
 	time_t now = time(0);
 	struct tm tstruct;
 	char buf[80];
@@ -76,44 +79,42 @@ std::string timestamp() {
 	return buf;
 }
 
-std::vector<int> sanData( char bdata[max_length] ) {
+std::vector<int> sanData( char bdata[max_length] ) { // sanitizes and trims received data to prevent exceptions and buffer overflows
 	std::stringstream ss( bdata );
 	std::string s2 = ss.str();
 	ss.str("");
-	std::string contlen = s2;
+	std::string contlen = s2; // make a copy of the buffer string, for retrieving the length from http headers
 	size_t f = contlen.find("Content-Length: ");
-	size_t p = s2.find( "\r\n\r\n" );
+	size_t p = s2.find( "\r\n\r\n" ); // start of the http header body marker
 	int h = f + 16;
 	size_t contend = contlen.length();
-	contlen.erase( p, contend);
+	contlen.erase( p, contend); // trim until just the number remains
 	contlen.erase( 0, h );
 	char cc[4];
-	for( int i = 0; i < 5; i++ ) {
+	for( int i = 0; i < 5; i++ ) { // convert to char* for atoi and nonnumeric
 		cc[i] = contlen[i];
 	}
-	delNonNumericChar( cc );
+	delNonNumericChar( cc ); // delete anything that isn't a number
 	std::string bbsize;
 	for( int i = 0; i < 4; i++ ) {
-		bbsize[i] = cc[i];
+		bbsize[i] = cc[i]; // stores in a string temporarily
 	}
-	using namespace std;
-	int bsize = atoi( bbsize.c_str() );
-	using boost::asio::ip::tcp;
-	p = p + 4;
-	int eob = p + bsize;
-	int eos = s2.length();
+	int bsize = atoi( bbsize.c_str() ); // dumps the c_str of string, because atoi hates me
+	p = p + 4; // now back to trimming the buffer
+	int eob = p + bsize; // trim off the end according to bsize
+	int eos = s2.length(); 
 	s2.erase( eob, eos);
 	s2.erase( 0, p );
 	int s2l = s2.length();
 	std::vector<int> odata;
-	odata.resize( max_length );
-	GDLogger.log( s2, 0 );
+	odata.resize( max_length ); // funnel int our vector<int>
+	GDLogger.log( s2, 0 ); // log what we got 
 	for (int i = 0; i < max_length; i++ ) {
 		odata[i] = ccInt( s2[i] );
 	}
-	return odata;
+	return odata; // return
 }
-bool valSerialData( const vector<int> &vdata ) {
+bool valSerialData( const vector<int> &vdata ) { // validates that all data conforms to structures set out in inflow doc
 	if( (vdata[0] == 0 && vdata[1] == 0 )
 			&& ( vdata[5] == 1 && vdata[13] == 1)
 			//&& ( vdata[14] == 0 && vdata[15] == 1)
@@ -122,11 +123,12 @@ bool valSerialData( const vector<int> &vdata ) {
 		return true;
 	}
 	else {
+		GDLogger.log( "Datastream REJECTED as Invalid.", 2);
 		return false;
 	}
 }
 
-void session( socket_ptr sock ) {
+void session( socket_ptr sock ) { // the actual TCP session starts here
 	// boost::this_thread::disable_interruption di;
 	logger GDLogger;
 	bool inproc = false; // this will be set to true once input has been sucessfully processed.
@@ -136,14 +138,14 @@ void session( socket_ptr sock ) {
 		for( ; ;) {
 			char data[max_length];
 			boost::system::error_code error;
-			size_t length = sock->read_some( boost::asio::buffer( data ), error );
+			size_t length = sock->read_some( boost::asio::buffer( data ), error ); // reads the length of the buffer, then reads the buffer into the char* data
 			char cdata[max_length];
 			for( int i = 0; i < max_length; i++ ) {
 				cdata[i] = data[i];
 			}
-			std::vector<int> idata;
+			std::vector<int> idata; // our hero, the vector going into handle_data
 			idata.resize( max_length );
-			idata = sanData( cdata );
+			idata = sanData( cdata ); // sanitize
 			/* std::stringstream ss( data );
 			std::vector<int> idata;
 			std::string s2 = ss.str();
@@ -186,7 +188,7 @@ void session( socket_ptr sock ) {
 				idata[i] = ccInt( s2[i] );
 				
 			} */
-			bool dvalid = valSerialData( idata );
+			bool dvalid = valSerialData( idata ); // validate
 			if( !dvalid ) {
 				GDLogger.log("Data rejected by server.", 3 );
 			}
@@ -209,7 +211,7 @@ void session( socket_ptr sock ) {
 			}
 			*/
 			if( inproc == true && error == boost::asio::error::eof ) { // if EOF reached and 
-				GDLogger.log( "Connection Terminated, data processed.", 1 );
+				GDLogger.log( "Connection Terminated, data processed.", 1 ); // if handle_data success, close connection
 				break;
 			}
 			else if( !inproc && error == boost::asio::error::eof  && icont > 0) {
@@ -219,13 +221,13 @@ void session( socket_ptr sock ) {
 			else if( error ) {
 				throw boost::system::system_error( error ); //some other error
 			}
-			icont++;
+			icont++; // to ensure that handle_data only gets called ONCE
 		}
 	}
 	catch( std::exception& e ) {
 		std::stringstream errstr;
 		errstr << "Exception in thread: " << e.what() << "\n";
-		std::string logentry = errstr.str();
+		std::string logentry = errstr.str(); // catch all the lovely boost errors
 		errstr.str("");
 		GDLogger.log( logentry, 3 );
 	}
@@ -233,11 +235,11 @@ void session( socket_ptr sock ) {
 }
 
 void server( boost::asio::io_service& io_service, short port ) {
-	tcp::acceptor a( io_service, tcp::endpoint( tcp::v4(), port ) );
+	tcp::acceptor a( io_service, tcp::endpoint( tcp::v4(), port ) ); // starts 
 	for( ; ; ) {
-		socket_ptr sock( new tcp::socket( io_service ) );
+		socket_ptr sock( new tcp::socket( io_service ) ); // creates a new socket for every connection and accepts
 		a.accept( *sock );
-		boost::thread t( boost::bind( session, sock ) );
+		boost::thread t( boost::bind( session, sock ) ); // starts session in a new thread
 	}
 }
 
@@ -266,26 +268,27 @@ int main( ) {
 	MT.log( "GDAgent v 0.5 Started. Initializing.", 1 );
 	MT.log( "Daemonizing....", 1 );
 	seedDaemon();
-	if( !er ) {
+	if( !er ) { // if EC is still empty, alls well
 		MT.log( "Daemonizing successful.", 1 );
 	}
 	else {
-		MT.log( "Daemonizing failed.", 3 );
+		MT.log( "Daemonizing failed.", 3 ); // if not, log an error, and continue
 	}
 	try{
-		MT.log( "Starting IO service... ", 1 );
-		using boost::asio::ip::tcp;
+		MT.log( "Starting IO service... ", 1 ); 
+		using boost::asio::ip::tcp; 
 		char listen_port[] = "8000";
 		boost::asio::io_service io_service;
 		using namespace std; // for atoi
-		server( io_service, atoi( listen_port ) );
+		server( io_service, atoi( listen_port ) ); //  listen porrt will eventually be read from config file, which reads as char* array.
 	}
 	catch( std::exception& e ) {
 		std::stringstream errmsg;
 		errmsg << "Exception: " << e.what() << "\n";
 		std::string em = errmsg.str();
-		errmsg.str("");
+		errmsg.str(""); // log any exceptions such as address already in use.
 		MT.log( em, 3 );
+		exit(0);
 	}
 	return 0;
 }
