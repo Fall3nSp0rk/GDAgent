@@ -7,8 +7,8 @@ LDFLAGS=-g -L/usr/lib/mysql/ -L/usr/lib/ -L/obj/ -L/usr/lib64/ -L/usr/include/bo
 LDLIBS=-lmysqlpp -lnsl -lz -lm -lboost_thread -lboost_system
 OBJS=obj/$(asio.o, )
 
-all: obj/serial.o obj/main.o obj/dbase.o obj/log.o
-	g++ $(CPPFLAGS) -o GDAgent obj/serial.o obj/dbase.o obj/main.o obj/log.o $(LDFLAGS) $(LDLIBS)
+all: obj/serial.o obj/main.o obj/dbase.o obj/log.o obj/mmapper.o obj/drive.o
+	g++ $(CPPFLAGS) -o GDAgent obj/serial.o obj/dbase.o obj/main.o obj/log.o obj/mmapper.o obj/drive.o $(LDFLAGS) $(LDLIBS)
 
 obj/main.o: main.cpp include/serial.h  include/dbase.h include/log.h include/ConfigFile.h
 	g++ --std=c++0x -c main.cpp -o obj/main.o -I/usr/include/boost_1_56_0/ -I/usr/include/mysql -I/usr/include/mysql++/ -I/usr/include/ -lmysqlpp -lnsl -lz -lm -L/usr/lib64/ -L/usr/lib/mysql/ -L/usr/lib64/ -L/usr/include/boost_1_56_0/stage/lib/ -lboost_thread -lboost_system
@@ -27,3 +27,9 @@ obj/convert.o: include/convert.cpp include/convert.h
 
 obj/log.o: include/log.cpp include/log.h 
 	g++ --std=c++0x -c include/log.cpp -o obj/log.o $(CPPFLAGS) $(LDFLAGS) $(LDLIBS)
+
+obj/mmapper.o: include/mmapper.cpp include/mmapper.h
+	g++ --std=c++0x -c include/mmapper.cpp -o obj/mmapper.o $(CPPFLAGS) $(LDFLAGS) $(LDLIBS)
+
+obj/drive.o: include/drive.cpp include/drive.h
+	g++ --std=c++0x -c include/drive.cpp -o obj/drive.o $(CPPFLAGS) $(LDFLAGS) $(LDLIBS)

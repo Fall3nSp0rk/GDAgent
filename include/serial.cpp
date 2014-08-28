@@ -13,6 +13,8 @@
 #include<stdlib.h>
 #include<boost/thread.hpp>
 #include<exception>
+#include "mmapper.h"
+#include "drive.h"
 using std::vector;
 const int bsize = 1024;
 
@@ -26,13 +28,10 @@ const int Sdlen = 612;
 const int Smlen = 18;
 const int Sblen = 1024;
 
-typedef std::pair<int, int> TPCodeUidPair;
-typedef std::pair<int, int> RgCodeUidPair;
-logger serlogger;
 
 serial::serial(){ // overrides default constructor
 	try {
-		serlogger.log( "serial object initialized.", 0 );
+		GDLogger.log( "serial object initialized.", 0 );
 		Snbuff.resize(Sblen);
 		Ssbits.resize(Sslen);
 		Shbits.resize(Shlen);
@@ -72,13 +71,13 @@ serial::serial(){ // overrides default constructor
 		errstream << "Exception in thread: " << e.what();
 		std::string errstr = errstream.str();
 		errstream.str("");
-		serlogger.log( errstr, 5 );
+		GDLogger.log( errstr, 5 );
 		boost::this_thread::interruption_point();
 	}
 }
 void serial::readBits( const std::vector<int> &buff ){
 	try{
-		serlogger.log( "Called readBits", 0);
+		GDLogger.log( "Called readBits", 0);
 		for ( int i = 0; i < 1024; i++ ) {
 			Snbuff[i] = buff[i];
 		}
@@ -98,27 +97,27 @@ void serial::readBits( const std::vector<int> &buff ){
 			f++;
 		}
 		int m = Sdbitstart;
-		/*for ( int i = 0; i < 10; i++ ) {
+		/*for ( int i = 0; i < m; i++ ) {
 			Sdbits[i] = buff[m];
 			m++;
-		}*/ //commenting this out until I write the actual drive bit reading util.
+		} *///commenting this out until I write the actual drive bit reading util.
 	}
 	catch( std::exception &e ) {
 		std::stringstream errstream;
 		errstream << "Exception in thread: " << e.what();
 		std::string lmsg = errstream.str();
 		errstream.str("");
-		serlogger.log( lmsg, 5 );
+		GDLogger.log( lmsg, 5 );
 	}
-		serlogger.log( "readBits() exited.", 0 );
+		GDLogger.log( "readBits() exited.", 0 );
 }
 std::string serial::giveStrVal( const std::string &cval ) {
-	serlogger.log( "giveStrVal() called.", 0 );
+	GDLogger.log( "giveStrVal() called.", 0 );
 	std::string aval = cval;
 	return aval;
 }
 int serial::giveIntVal( const int &cint ) { //for copying values
-	serlogger.log( "giveIntVal() called.", 0 );
+	GDLogger.log( "giveIntVal() called.", 0 );
 	int aint = cint;
 	return aint;
 }
@@ -131,7 +130,7 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 	bool passedSiteTypeValidation = false;
 	bool passedMACFormatValidation = false;
 	bool passedMACValidation = false;
-	serlogger.log( "validateHost() called.", 0 );
+	GDLogger.log( "validateHost() called.", 0 );
 	std::stringstream logstream;
 	std::string lmsg;
 	logstream << "Beginning data validation on received data for alleged host " << Shname << ".";
@@ -143,88 +142,88 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 	vector<std::string> l2uids{ "gcf", "num", "xref", "buffer", "gw", "bfs", "ax", "lb" };
 	lmsg = logstream.str();
 	logstream.str("");
-	serlogger.log( lmsg, 1 );
-	serlogger.log( "Validating UIDs...", 1);
+	GDLogger.log( lmsg, 1 );
+	GDLogger.log( "Validating UIDs...", 1);
 	if ( fstype == "r" && fsid > 400 ) { // checks UIDs against a range they should appear in
 		logstream << "Invalid UID for r-server of " << fsid << " passed. Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( fstype == "h" &&  fsid > 8 ) { 
 		logstream << "Invalid UID for h-server of " << fsid << " passed. Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( (std::find( l4uids.begin(), l4uids.end(), fstype) != l4uids.end() ) && fsid > 4 )  {
 		logstream << "Invalid UID for " << fstype << "-server of " << fsid << " passed. Rejecting data as invalid."; // some uids are max of 4 e.g. backlogs, borders.
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( (std::find( l2uids.begin(), l2uids.end(), fstype ) != l2uids.end() ) && fsid > 2 ) {
 		logstream << "Invalid UID for " << fstype << "-server of " << fsid << " passed. Rejecting data as invalid."; // some uids have a max of 2, e.g. num, xref
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else { // if nothing matches, set UID flag to true
 		logstream << "UID Validation Successful. UID " << Suid << " is valid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1 );
+		GDLogger.log( lmsg, 1 );
 		passedUIDValidation = true;
 	}
-	serlogger.log( "Validating TLD against site...", 1 );
+	GDLogger.log( "Validating TLD against site...", 1 );
 	if( ( std::find( gnsites.begin(), gnsites.end(), fsite ) != gnsites.end() ) && ftld != "giganews.com" ) {
 		logstream << "TLD Validation against site Failed. TLD should be giganews.com, currently is " << ftld << ". Rejecting as invalid."; // if site isn't listed in gnsites list above, and TLD is giganews, reject as invalid.
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( ( std::find( gnsites.begin(), gnsites.end(), fsite ) == gnsites.end() ) && ftld != "goldenfrog.com" ) {
 		logstream << "TLD Validation against site Failed. TLD should be goldenfrog.com, currently is " << ftld << ". Rejecting data as invalid."; // similar to before, but if it IS listed in gnsites, and TLD is gf.com, reject
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else { // if none of above match, set next flag to true
 		logstream << "TLD Validation against Site Successful. TLD " << ftld << " is valid for site " << fsite << ".";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1 );
+		GDLogger.log( lmsg, 1 );
 		passedSiteTLDValidation = true;
 	}
-	serlogger.log( "Validating TLD against Type", 1 ); // only certain kinds of servers are .gn
+	GDLogger.log( "Validating TLD against Type", 1 ); // only certain kinds of servers are .gn
 	if( ( std::find( gntypes.begin(), gntypes.end(), fstype ) != gntypes.end() ) && ftld != "giganews.com" ) {
 		logstream << "TLD Validation against Type failed. TLD should be giganews.com, currently is " << ftld << ". Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( ( std::find( gftypes.begin(), gftypes.end(), fstype ) != gftypes.end() ) && ftld != "goldenfrog.com" ) {
 		logstream << "TLD Validation against Type failed. TLD should be goldenfrog.com, currently is " << ftld << ". Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else {
 		logstream << "TLD Validation against Type Successful. TLD " << ftld << " is valid for type " << fstype <<".";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1 );
+		GDLogger.log( lmsg, 1 );
 		passedTypeTLDValidation = true;
 	}
-	serlogger.log( "TLD Validation complete. Beginning Type Validation against Site.", 1 ); // certain sites don't have certain server types. Compare, and if a match is found, reject
+	GDLogger.log( "TLD Validation complete. Beginning Type Validation against Site.", 1 ); // certain sites don't have certain server types. Compare, and if a match is found, reject
 	if(  ( std::find( gntypes.begin(), gntypes.end(), fstype ) != gntypes.end()
 				&& std::find( gnsites.begin(), gnsites.end(), fsite ) == gnsites.end() )
 			|| ( std::find( gftypes.begin(), gftypes.end(), fstype) != gftypes.end()
@@ -232,7 +231,7 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 		logstream << "Type Validation against site failed. Type " << fstype << " does not exist in site " << fsite << ". Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else if( (fstype == "cruncher" && std::find( gnsites.begin(), gnsites.end(), fsite) != gnsites.end() ) 
@@ -241,7 +240,7 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 		logstream << fsite << ". Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	}
 	else {
@@ -249,29 +248,29 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 		logstream << fsite << ".";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1 );
+		GDLogger.log( lmsg, 1 );
 		passedSiteTypeValidation = true;
 	}
-	serlogger.log( "Validating MAC address...", 1 );
-	serlogger.log( "Validating MAC format...", 1 ); 
+	GDLogger.log( "Validating MAC address...", 1 );
+	GDLogger.log( "Validating MAC format...", 1 ); 
 	// broken code for mac address validation below
 	/* if( &Smac[2] != ":" || &Smac[5] != ":" || &Smac[8] != ":" || &Smac[11] != ":" || &Smac[14] != "\n" ) {
 		logstream << "MAC Address Validation Failed. MAC " << Smac << " is of invalid format. Rejecting data as invalid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 3 );
+		GDLogger.log( lmsg, 3 );
 		return false;
 	} 
 	else {
 		logstream << "MAC Address " << Smac << " if of valid format.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1);
+		GDLogger.log( lmsg, 1);
 		passedMACFormatValidation = true;
 	} */
 	passedMACFormatValidation = true;
 	/*
-	serlogger.log( "Validating MAC Address Values...", 1);
+	GDLogger.log( "Validating MAC Address Values...", 1);
 	bool mval = true;
 	for( int i = 0; i < 14; i++ ) {
 		if( i != 2 && i != 5 && i != 8 && i != 11 ) {
@@ -284,22 +283,22 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 		// /broken code
 	bool mval = true;
 	if( mval == false ) { // sad day about this.
-		serlogger.log( "MAC Address Validation Failed. One or more values is not a valid hex value.", 3 );
+		GDLogger.log( "MAC Address Validation Failed. One or more values is not a valid hex value.", 3 );
 		return false;
 	}
 	else {
 		logstream << "MAC Address Validation Successful. MAC Address " << Smac << " is valid.";
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 1 );
+		GDLogger.log( lmsg, 1 );
 		passedMACValidation = true;
 	}
-	serlogger.log( "All Validation checks completed. Running final check now.", 1 ); // final test. If all flags are TRUE now, return true - data has passed validation check.
+	GDLogger.log( "All Validation checks completed. Running final check now.", 1 ); // final test. If all flags are TRUE now, return true - data has passed validation check.
 	logstream << passedUIDValidation << " " << passedSiteTLDValidation << " " << passedTypeTLDValidation;
 	logstream << " " << passedSiteTypeValidation << " " << passedMACFormatValidation << " ";
 	lmsg = logstream.str();
 	logstream.str("");
-	serlogger.log( lmsg, 0 );
+	GDLogger.log( lmsg, 0 );
 	if( passedUIDValidation == false || passedSiteTLDValidation == false || passedTypeTLDValidation == false
 			|| passedSiteTypeValidation == false || passedMACFormatValidation == false
 			|| passedMACValidation == false ) {
@@ -309,19 +308,19 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 		logstream << passedMACValidation;
 		lmsg = logstream.str();
 		logstream.str("");
-		serlogger.log( lmsg, 4 );
+		GDLogger.log( lmsg, 4 );
 		return false;
 	}
 	else {
-		serlogger.log( "Validation Completed. Passing to database module.", 1 );
+		GDLogger.log( "Validation Completed. Passing to database module.", 1 );
 		return true;
 	}
 }
 
 bool serial::deSerialize() { // wrapper function that calls deserialization functioons, then validates, and returns true if successful, false if not.
-	serlogger.log( "deSerialize() called.", 0 );
-	Sstype = readSType( Ssbits ); 
-	Ssite = readSite( Ssbits );
+	GDLogger.log( "deSerialize() called.", 0 );
+	Sstype = mapp.getKeyFromMap( Ssbits[0], Ssbits[1], 1 ); 
+	Ssite = mapp.getKeyFromMap( Ssbits[5], Ssbits[6], 2 );
 	readGC( Ssbits );
 	readRecover( Ssbits );
 	getHostName( Shbits );
@@ -329,7 +328,7 @@ bool serial::deSerialize() { // wrapper function that calls deserialization func
 	readMac( Smbits );
 	readAType( Ssbits );
 	//debuf();
-	serlogger.log( "deSerialize() completed.", 0 );
+	GDLogger.log( "deSerialize() completed.", 0 );
 	if( validateHost( Sstype, Ssid, Ssite, Stld ) ) {
 		return true;
 	}
@@ -339,7 +338,7 @@ bool serial::deSerialize() { // wrapper function that calls deserialization func
 }
 
 void serial::debuf() { // deprecated debug portion
-	serlogger.log( "debuf() called.", 0);
+	GDLogger.log( "debuf() called.", 0);
 	std::cout<< Ssite << std::endl;
 	std::cout<< Sstype << std::endl;
 	std::cout<< Shname << std::endl;
@@ -347,7 +346,7 @@ void serial::debuf() { // deprecated debug portion
 // function definitions for serial class follow here
 
 void serial::readMac( const vector<int> &mbits ) { // reads the 18 digit decimal-encoded mac address
-	serlogger.log( "readMac() called.", 0 );
+	GDLogger.log( "readMac() called.", 0 );
 	std::ostringstream strm;
 	char macbit[3];
 	std::stringstream m;
@@ -356,7 +355,7 @@ void serial::readMac( const vector<int> &mbits ) { // reads the 18 digit decimal
 	}
 	std::string mm = m.str(); // for debug purposes, we echo the received decimal digits to the logger
 	m.str(""); // set the original stringstream to null, to free up the used memory
-	serlogger.log( mm, 1 );
+	GDLogger.log( mm, 1 );
 	int f = 0;
 	for(int nMAC = 0; nMAC < 6; nMAC++) {
 		std::string fmac = "";
@@ -376,11 +375,11 @@ void serial::readMac( const vector<int> &mbits ) { // reads the 18 digit decimal
 	lgmsg << "Mac address of server " << Shname << " should be " << Smac << ".\n";
 	std::string ll = lgmsg.str(); // logs what it thinks the mac is
 	lgmsg.str("");
-	serlogger.log( ll, 1 );
+	GDLogger.log( ll, 1 );
 }
 
 void serial::readGC( const vector<int> &fsbits ) {
-	serlogger.log( "readGC() called.", 0); // reads the GC status bit (sbit[2]) and translates it to human
+	GDLogger.log( "readGC() called.", 0); // reads the GC status bit (sbit[2]) and translates it to human
 
 	switch ( fsbits[2] ) {
 		case 0:
@@ -394,17 +393,17 @@ void serial::readGC( const vector<int> &fsbits ) {
 			break;
 		default:
 			Sservices = "Err";
-			serlogger.log( "error on line 147: serial.cpp: Invalid value received for Sservices.", 3);
+			GDLogger.log( "error on line 147: serial.cpp: Invalid value received for Sservices.", 3);
 			break;
 	}
 	//catch( int e ) { // need to add this back in for exception handling after I write custom excaption subclass
 	//	std::cout<< "An Exception has occurred. Error " << e << "." << std::endl;
 	//}
-	serlogger.log( "readGC() completed.", 0);
+	GDLogger.log( "readGC() completed.", 0);
 }
 
 void serial::readDNum( const vector<int> &sbits ) { // read the number of drives from sbit[4]
-	serlogger.log( "readDNum() called.", 0 );
+	GDLogger.log( "readDNum() called.", 0 );
 	switch( sbits[4] ) {
 		case 0:
 			Sdnum = 12;
@@ -417,45 +416,47 @@ void serial::readDNum( const vector<int> &sbits ) { // read the number of drives
 			break;
 		case 3:
 			Sdnum = 0; // should throw an exception
-			serlogger.log( "Error on line 156: serial.cpp: invalid value (3) received for Sdnum.", 3 );
+			GDLogger.log( "Error on line 156: serial.cpp: invalid value (3) received for Sdnum.", 3 );
 			break;
 		default: // should only occur if no data is received, should throw an exception
 			Sdnum = 0;
-			serlogger.log( "Error on line 156: serial.cpp: invalid value (?) received for Sdnum.", 3 );
+			GDLogger.log( "Error on line 156: serial.cpp: invalid value (?) received for Sdnum.", 3 );
 			break;
 	}
 //	catch( int e) {
 //
 //		std::cout<< "An Exception has occurred. Error " << e << "." << std::endl;
 //	}
-	serlogger.log( "readDnum() completed.", 0 );
+	GDLogger.log( "readDnum() completed.", 0 );
 }
 
 std::string serial::readType( const std::string &fstype ) { // takes the server type and determines the next part of its hostname
-	serlogger.log( "readType() called.", 0 );
+	GDLogger.log( "readType() called.", 0 );
 	if ( fstype == "r" || fstype == "h" || fstype == "t" || fstype == "serv" ) {
-		serlogger.log( "Determined type to be 'gc'.", 1 ); // *.gc.*.*
+		GDLogger.log( "Determined type to be 'gc'.", 1 ); // *.gc.*.*
 		return "gc";
 	}
 	else if ( fstype == "backlog" || fstype == "border" || fstype == "num" || fstype == "xref" ) {
-		serlogger.log( "Determined type to be 'nntp'.", 1 ); // *.nntp.*.*
+		GDLogger.log( "Determined type to be 'nntp'.", 1 ); // *.nntp.*.*
 		return "nntp";
 	}
 	else {
-		serlogger.log( "No type found.", 1 ); // All the rest
+		GDLogger.log( "No type found.", 1 ); // All the rest
 		return "na";
 	}
-	serlogger.log( "readType() completed.", 0 );
+	GDLogger.log( "readType() completed.", 0 );
 }
+
+/*
 std::string serial::readSType( const vector<int> &sbits ) {
-	serlogger.log( "readSType() called.", 0 );
+	GDLogger.log( "readSType() called.", 0 );
 	int stcode = sbits[0];
 	int uid = sbits[1];
 	std::stringstream debugsbitsvalue; // uses a map:key pair
 	debugsbitsvalue << sbits[0] << sbits[1];
 	std::string tdebug = debugsbitsvalue.str();
 	debugsbitsvalue.str("");
-	// serlogger.log( tdebug, 0 ); 
+	// GDLogger.log( tdebug, 0 ); 
 	try {
 		static std::map<TPCodeUidPair, std::string> cachedData; 
 		if ( cachedData.empty() ) { // if the map isn't already in memory, load it now with these values
@@ -483,7 +484,7 @@ std::string serial::readSType( const vector<int> &sbits ) {
 		}
 		auto it = cachedData.find(std::make_pair(stcode, uid));
 		if (  it != cachedData.end()) {
-			serlogger.log( "readSType() completed.", 0 );
+			GDLogger.log( "readSType() completed.", 0 );
 			return it->second; // return a pointer to the value stored at the matching key
 		}
 	}
@@ -492,23 +493,23 @@ std::string serial::readSType( const vector<int> &sbits ) {
 		errstream << "Exception in thread: " << e.what();
 		std::string errstr = errstream.str();
 		errstream.str("");
-		serlogger.log( errstr, 5 );
+		GDLogger.log( errstr, 5 );
 		boost::this_thread::interruption_point(); // specifies this as aninterruption point, allowing boost::thread to gracfully end the thread/
 		return "Err";
 	}
 	return "Err";
 }
-
+*/
 
 void serial::readAType( const vector<int> &sbits ) {
-	serlogger.log( "Determined asset-type to be 'server'.", 1 );
+	GDLogger.log( "Determined asset-type to be 'server'.", 1 );
 	Satype = "server";
 	// Asset type isn't implemented. YET.
 	
 }
 
 void serial::readRecover( const vector<int> &sbits ) {
-	serlogger.log( "readRecover() called.", 0 );
+	GDLogger.log( "readRecover() called.", 0 );
 	int rcode = sbits[3];
 	switch( rcode ) { // reads whether or not the server is currently recovering.
 		case 0:
@@ -524,14 +525,14 @@ void serial::readRecover( const vector<int> &sbits ) {
 			Srstate = "Defunct";
 			break;
 		default:
-			serlogger.log( "Error on line 243: serial.cpp: Invalid data (?) received for Srstate.", 2 );
+			GDLogger.log( "Error on line 243: serial.cpp: Invalid data (?) received for Srstate.", 2 );
 			break;
 	}
-	serlogger.log( "readRecover() completed.", 0 );
+	GDLogger.log( "readRecover() completed.", 0 );
 }
 
 std::string serial::readID(  const vector<unsigned long int> &hbits, const std::string &fstype ) { 
-	serlogger.log( "readID() called.", 0 );
+	GDLogger.log( "readID() called.", 0 );
 	std::stringstream result;
 	std::copy(hbits.begin(), hbits.end(), std::ostream_iterator<int>(result, ""));
 	std::string idnum = result.str();
@@ -554,21 +555,21 @@ std::string serial::readID(  const vector<unsigned long int> &hbits, const std::
 		ss << fstype << "0" << idnum;
 		id = ss.str();
 		ss.str("");
-		serlogger.log("readID() completed.", 0);
+		GDLogger.log("readID() completed.", 0);
 		return id;
 	}
 	else {
 		ss << fstype << idnum;
 		id = ss.str();
 		ss.str("");
-		serlogger.log( "readID() completed.", 0);
+		GDLogger.log( "readID() completed.", 0);
 		return id;
 	}
 }
-
+/*
 // Reads the site identifier code
 std::string serial::readSite( const vector<int> &fsbits ) {
-	serlogger.log( "readSite() called.", 0 );
+	GDLogger.log( "readSite() called.", 0 );
 	// reads the only two numbers we care about out of the server information bits
 	int rgcode = fsbits[5];
 	int uid = fsbits[6]; 
@@ -599,30 +600,30 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 	}
 	auto it = siteMap.find(std::make_pair(rgcode, uid));
 	if ( it != siteMap.end() ) {
-		serlogger.log( "readSite() executed successfully.", 0 );
+		GDLogger.log( "readSite() executed successfully.", 0 );
 		return it->second; // returns a pointer to the matching key value
 	}
 	else {
 		return "ERR";
 	}
 }
-
+*/
 
 std::string serial::getTLD( const std::string &fsite ) {
-	serlogger.log( "getTLD() called.", 0 ); // if site is not in the GNsites list, it's gf, if it is, GN
+	GDLogger.log( "getTLD() called.", 0 ); // if site is not in the GNsites list, it's gf, if it is, GN
 	vector<std::string> gnsites{ "AMS", "AMS1", "AMS2", "AMS3", "DCA", "DCA1", "DCA2", "DCA3", "LAX", "HKG", "AUS2" };
 	if ( std::find(gnsites.begin(), gnsites.end(), fsite) != gnsites.end()) { // gives the top level domain for the server.
-		serlogger.log( "Determined TLD to be giganews.com.", 1 );
+		GDLogger.log( "Determined TLD to be giganews.com.", 1 );
 		return "giganews.com";
 	}
 	else {
-		serlogger.log( "Determined TLD to be goldenfrog.com.", 1 );
+		GDLogger.log( "Determined TLD to be goldenfrog.com.", 1 );
 		return "goldenfrog.com";
 	}
 }
 
 void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembles various bits into a coherent hostname
-	serlogger.log( "getHostName() called.", 0 );
+	GDLogger.log( "getHostName() called.", 0 );
 	std::string Stld = serial::getTLD( Ssite );
 	std::string tid = serial::readType( Sstype );
 	std::string Suid = serial::readID( fhbits, Sstype );
@@ -636,14 +637,14 @@ void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembl
 		lstream << "Determined Hostname to be: " << Shname << ".";
 		std::string lstr = lstream.str();
 		lstream.str("");
-		serlogger.log( lstr, 1 );
+		GDLogger.log( lstr, 1 );
 		sss << Suid << "." << Ssite; // host shortname, mostly for server + drive matching
 		Sshname = sss.str();
 		sss.str("");
 		lstream << "Determined Host Shortname to be: " << Sshname << ".";
 		lstr = lstream.str();
 		lstream.str("");
-		serlogger.log( lstr, 1 );
+		GDLogger.log( lstr, 1 );
 	}
 	else {
 		ss << Suid << "." << Ssite << "." << Stld; // for 'non-typed' servers *no .gc. or .nntp.
@@ -652,8 +653,8 @@ void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembl
 		ss << "Determined Hostname to be: " << Shname <<". Unable to determine host Shortname.";
 		std::string lmsg = ss.str();
 		ss.str("");
-		serlogger.log( lmsg, 2 );
+		GDLogger.log( lmsg, 2 );
 	}
-	serlogger.log( "getHostName() completed.", 0 );
+	GDLogger.log( "getHostName() completed.", 0 );
 }
-
+serial ser;

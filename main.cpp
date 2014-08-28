@@ -29,11 +29,10 @@
 #include"include/util.h"
 #include<algorithm>
 #include<exception>
+#include "include/drive.h"
 using boost::asio::ip::tcp;
 
 const int max_length = 1024;
-logger GDLogger; // initialize our logger, also reads from config file, globally. This means that all threads (should) be able to access this logger.
-
 // define the pointer to where socket data is being stored
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
@@ -41,16 +40,17 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens hhe
 	GDLogger.log( "handle_data() called.", 0 );
 	try {
 		boost::system::error_code ec; // declare an error object ot collect exceptions
-		serial sbuff; // declare a serial object
-		sbuff.readBits( buffer_data ); //read from buffer into saod object
-		dbase thread; // initalize db object
-		bool dsvalidated = sbuff.deSerialize(); // deserialize data
+		ser.readBits( buffer_data ); //read from buffer into saod object
+		// ddrive dd( ser.Sdnum, ser.Sshname, ser.Sdbits );
+		bool dsvalidated = ser.deSerialize(); // deserialize data
 		if(!dsvalidated) { // self explanatory
 			GDLogger.log( "Deserialized data validation returned as false.", 3 );
 		}
 		else { // I hate this function. Reads from the serial object to the DB object.
-			thread.getQueryData( sbuff.Srstate, sbuff.Sstype, sbuff.Ssite, sbuff.Shname, sbuff.Satype, sbuff.Sservices, sbuff.Sanum, sbuff.Sshname, sbuff.Smac, sbuff.Svarfill, sbuff.Sdnum ); // handing all the data off to the database module.
+			thread.getQueryData( ser.Srstate, ser.Sstype, ser.Ssite, ser.Shname, ser.Satype, ser.Sservices, ser.Sanum, ser.Sshname, ser.Smac, ser.Svarfill, ser.Sdnum ); // handing all the data off to the database module.
 			thread.runQuery(); // runs all the queries necessary to update or insert
+			
+			
 		}
 		if( !ec ) {
 			GDLogger.log( "handle_data() call completed without error.", 0 ); // if ec is still empty, we're done!
@@ -130,7 +130,6 @@ bool valSerialData( const vector<int> &vdata ) { // validates that all data conf
 
 void session( socket_ptr sock ) { // the actual TCP session starts here
 	// boost::this_thread::disable_interruption di;
-	logger GDLogger;
 	bool inproc = false; // this will be set to true once input has been sucessfully processed.
 	try {
 		GDLogger.log( "Connection Established.", 1 );
@@ -264,30 +263,28 @@ bool seedDaemon() {
 
 int main( ) {
 	boost::system::error_code er;
-	logger MT;
-	MT.log( "GDAgent v 0.5 Started. Initializing.", 1 );
-	MT.log( "Daemonizing....", 1 );
+	GDLogger.log( "GDAgent v 0.5 Started. Initializing.", 1 );
+	GDLogger.log( "Daemonizing....", 1 );
 	seedDaemon();
 	if( !er ) { // if EC is still empty, alls well
-		MT.log( "Daemonizing successful.", 1 );
+		GDLogger.log( "Daemonizing successful.", 1 );
 	}
 	else {
-		MT.log( "Daemonizing failed.", 3 ); // if not, log an error, and continue
+		GDLogger.log( "Daemonizing failed.", 3 ); // if not, log an error, and continue
 	}
 	try{
-		MT.log( "Starting IO service... ", 1 ); 
+		GDLogger.log( "Starting IO service... ", 1 ); 
 		using boost::asio::ip::tcp; 
-		char listen_port[] = "8000";
 		boost::asio::io_service io_service;
 		using namespace std; // for atoi
-		server( io_service, atoi( listen_port ) ); //  listen porrt will eventually be read from config file, which reads as char* array.
+		server( io_service, GDLogger.Llport ); //  listen porrt will eventually be read from config file, which reads as char* array.
 	}
 	catch( std::exception& e ) {
 		std::stringstream errmsg;
 		errmsg << "Exception: " << e.what() << "\n";
 		std::string em = errmsg.str();
 		errmsg.str(""); // log any exceptions such as address already in use.
-		MT.log( em, 3 );
+		GDLogger.log( em, 3 );
 		exit(0);
 	}
 	return 0;

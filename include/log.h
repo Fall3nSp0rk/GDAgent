@@ -1,11 +1,13 @@
 //log.h
 // for logging and daemonizing functions.
 //
-
+#ifndef __LOG_H
+#define __LOG_H
 class logger {
 	public:
 		logger();
 		void log ( const std::string &text, int mlvl );
+		int Llport;
 	private:
 		void errException( const int &ecode, const int &line, const std::string &file );
 		void readCfg();
@@ -22,3 +24,4 @@ class logger {
 };
 
 extern logger GDLogger;
+#endif

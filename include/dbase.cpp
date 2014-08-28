@@ -11,27 +11,60 @@
 #include"dbase.h"
 #include"log.h"
 //#include"serial.h"
-logger dbaselogger;
-void dbase::runQuery() {
-	dbaselogger.log( "runQuery() called.", 0 );
-	bool ex = checkExists( inval[1] );
-	if ( ex == true ) {
-		update();
+
+bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
+	bool ex = checkExists( qvec[0], "gd_drives", "host_shortname" );
+	std::stringstream qqquery;
+	if( ex ) {
+		qqquery << "UPDATE `" << dbname << "`.`gd_drives` SET spool_number=" << mysqlpp::quote_only << qvec[2];
+		qqquery << ", drive_status=" << mysqlpp::quote_only << qvec[3] <<", spool_status=" <<mysqlpp::quote_only;
+		qqquery << ", pending_sectors=" << mysqlpp::quote_only << qvec[6];
+		qqquery << ", reallocated_sectors=" << mysqlpp::quote_only << qvec[7];
+		qqquery << ";";
+		std::string fquery = qqquery.str();
+		qqquery.str("");
+		update( fquery );
+		return true;
 	}
 	else {
-		insert();
+		qqquery << "INSERT INTO `" << dbname << "`.`gd_drives` VALUES ( " << mysqlpp::quote_only << "Hard Drive";
+		qqquery << ", " << mysqlpp::quote_only << " " << ", " << mysqlpp::quote_only << inval[5];
+		qqquery << ", " << mysqlpp::quote_only << qvec[0] << ", " << mysqlpp::quote_only << "0";
+		qqquery << ", " << mysqlpp::quote_only << qvec[1];
+		qqquery << ", " << mysqlpp::quote_only << qvec[2] << ", " << mysqlpp::quote_only << "0";
+		qqquery << ", " << mysqlpp::quote_only << "0" << ", " << mysqlpp::quote_only << qvec[3];
+		qqquery << ", " << mysqlpp::quote_only << qvec[5] << ", " << mysqlpp::quote_only << qvec[4];
+		qqquery << ", " << mysqlpp::quote_only << qvec[6] << ", " << mysqlpp::quote_only << qvec[7];
+		qqquery << ", " << mysqlpp::quote_only << "0" << ", " << mysqlpp::quote_only << "true";
+		qqquery << ");";
+		std::string ffquery = qqquery.str();
+		qqquery.str("");
+		insert( ffquery );
+		return true;
 	}
-	dbaselogger.log( "runQuery() completed.", 0 );
 }
-bool dbase::checkExists( const std::string &data ) { // check if the received data matches anything already in the database
-	dbaselogger.log( "checkExists() called.", 0 );
-	dbaselogger.log ( "Checking if host already in Database...", 1 );
+
+
+void dbase::runQuery() {
+	GDLogger.log( "runQuery() called.", 0 );
+	bool ex = checkExists( inval[1], "gd_servers", "hostname" );
+	if ( ex == true ) {
+		updateServer();
+	}
+	else {
+		inServer();
+	}
+	GDLogger.log( "runQuery() completed.", 0 );
+}
+bool dbase::checkExists( const std::string &data, const std::string &table, const std::string &field ) { // check if the received data matches anything already in the database
+	GDLogger.log( "checkExists() called.", 0 );
+	GDLogger.log ( "Checking if host already in Database...", 1 );
 	mysqlpp::Connection con3( false );
 	if ( con3.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream queryss;
-		queryss<< "SELECT hostname FROM `" << dbname << "`.`gd_servers` WHERE hostname = " << mysqlpp::quote_only << data << ";";
+		queryss<< "SELECT hostname FROM `" << dbname << "`.`" << table << "` WHERE " << field << " = " << mysqlpp::quote_only << data << ";";
 		std::string qstr = queryss.str();
-		dbaselogger.log( qstr, 1 );
+		GDLogger.log( qstr, 1 );
 		mysqlpp::Query query = con3.query( qstr );
 		//std::cout << qstr << std::endl;
 		mysqlpp::StoreQueryResult res = query.store();
@@ -41,52 +74,56 @@ bool dbase::checkExists( const std::string &data ) { // check if the received da
 			res1 << row[0];
 		}
 		std::string result = res1.str();
-		dbaselogger.log( result, 1 );
+		GDLogger.log( result, 1 );
 
 		if ( result == inval[1] ) {
-			dbaselogger.log( "Host exists in Database.", 1 );
+			GDLogger.log( "Host exists in Database.", 1 );
 			return true;
 		}
 		else {
-			dbaselogger.log( "Host does not exist in Database.", 1 );
+			GDLogger.log( "Host does not exist in Database.", 1 );
 			return false;
 		}
 	}
-	dbaselogger.log( "checkExists() completed.", 0 );
+	GDLogger.log( "checkExists() completed.", 0 );
 }
 
-void dbase::update() { // update the selected entry in the database
-	dbaselogger.log( "update() called.", 0 );
-	dbaselogger.log( "Updating database entry.", 1 );
+void dbase::updateServer() {
+	std::stringstream uss;
+	uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << 0 << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
+	std::string upstr = uss.str();
+	GDLogger.log( upstr, 1 );
+	update( upstr );
+}
+
+void dbase::update( const std::string &qquery ) { // update the selected entry in the database
+	GDLogger.log( "update() called.", 0 );
+	GDLogger.log( "Updating database entry.", 1 );
 	mysqlpp::Connection con2( false );
 	if ( con2.connect( dbname, dbhost, dbuser, dbpass ) ) {
-		std::stringstream uss;
-		uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << 0 << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
-		std::string upstr = uss.str();
-		dbaselogger.log( upstr, 1 );
-		mysqlpp::Query query = con2.query( upstr );
+		mysqlpp::Query query = con2.query( qquery );
 		mysqlpp::SimpleResult res = query.execute();
 		if ( res ) {
-			dbaselogger.log( "Record updated sucessfully.", 1 );
+			GDLogger.log( "Record updated sucessfully.", 1 );
 		}
 		else {
-			dbaselogger.log( "Error updating record.", 2 );
+			GDLogger.log( "Error updating record.", 2 );
 		}
 	}
 	else {
-		dbaselogger.log( "Error establishing connection to database.", 3 );
+		GDLogger.log( "Error establishing connection to database.", 3 );
 	}
-	dbaselogger.log( "update() completed.", 0 );
+	GDLogger.log( "update() completed.", 0 );
 }
 
 std::string dbase::getLocFromSite( const std::string &site ) { // use the site that is transmitted to determine what the region is
-	dbaselogger.log( "getLocFromSite() called.", 0 );
+	GDLogger.log( "getLocFromSite() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream lfs;
 		lfs<< "SELECT srg_code FROM `" << dbname << "`.`gd_sites` WHERE site_name = " << mysqlpp::quote_only << site << ";";
 		std::string loc = lfs.str();
-		dbaselogger.log( loc, 1 );
+		GDLogger.log( loc, 1 );
 		mysqlpp::Query query = conn.query( loc );
 		if (mysqlpp::StoreQueryResult res = query.store() ) {
 			std::stringstream res1;
@@ -95,54 +132,59 @@ std::string dbase::getLocFromSite( const std::string &site ) { // use the site t
 				res1 << row[0] << std::endl;
 			}
 			std::string result = res1.str();
-			dbaselogger.log( result, 1 );
+			GDLogger.log( result, 1 );
 			return result;
 		} 
 		if ( conn.errnum() ) {
-			dbaselogger.log( "Error Received in fetching a row.", 2 );
+			GDLogger.log( "Error Received in fetching a row.", 2 );
 			return "ERR";
 		}
 		else {
-			dbaselogger.log( "Unknown Error Occurred or Unhandled Exception.", 3 );
+			GDLogger.log( "Unknown Error Occurred or Unhandled Exception.", 3 );
 			return "ERR";
 		}
 	}
 	else {
-		dbaselogger.log( "Unable to connect to database!", 4 );
+		GDLogger.log( "Unable to connect to database!", 4 );
 		return "ERR";
 	}
-	dbaselogger.log( "getLocFromSite() completed.", 0 );
+	GDLogger.log( "getLocFromSite() completed.", 0 );
 }
 
-void dbase::insert() { // insert server info into the mysql database (only if not already present)
-	dbaselogger.log( "insert() called.", 0 );
+void dbase::inServer() {
+
+	std::stringstream iss;
+	iss<< "INSERT INTO `" << dbname << "`.`gd_servers` VALUES( ";
+	for( int i = 0; i < 13; i++ ) {
+		iss<< mysqlpp::quote_only << inval[i] << ", ";
+	}
+	iss<< mysqlpp::quote_only << "0" << ", NOW() );";
+	std::string is = iss.str();
+	GDLogger.log( is, 1 );
+	insert( is );
+}
+
+void dbase::insert( const std::string &qstring ) { // insert server info into the mysql database (only if not already present)
+	GDLogger.log( "insert() called.", 0 );
 	mysqlpp::Connection conn( false );
 	if ( conn.connect( dbname, dbhost, dbuser, dbpass ) ) {
-		std::stringstream iss;
-		iss<< "INSERT INTO `" << dbname << "`.`gd_servers` VALUES( ";
-		for( int i = 0; i < 13; i++ ) {
-			iss<< mysqlpp::quote_only << inval[i] << ", ";
-		}
-		iss<< mysqlpp::quote_only << "0" << ", NOW() );";
-		std::string is = iss.str();
-		dbaselogger.log( is, 1 );
-		mysqlpp::Query query = conn.query( is );
+		mysqlpp::Query query = conn.query( qstring );
 		mysqlpp::SimpleResult res = query.execute();
 		if( res ) {
-			dbaselogger.log( "Data inserted successfully.", 1 );
+			GDLogger.log( "Data inserted successfully.", 1 );
 		}
 		else {
-			dbaselogger.log( "Failed to add server to database.", 2 );
+			GDLogger.log( "Failed to add data to database.", 2 );
 		}
 	}
 	else {
-		dbaselogger.log( "Failed to connect to database. Please ensure mysql is running, and that your credentials are correct.", 3 );
+		GDLogger.log( "Failed to connect to database. Please ensure mysql is running, and that your credentials are correct.", 3 );
 	}
-	dbaselogger.log("insert() completed.", 0 );
+	GDLogger.log("insert() completed.", 0 );
 }
 
 bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshname, const std::string &Fmac, const int &vfill, const int &dnum ) {
-	dbaselogger.log( "getQueryData() called.", 0 ); // takes all the deserialized data from the serial class and sorts them into containers in preparation of db injection
+	GDLogger.log( "getQueryData() called.", 0 ); // takes all the deserialized data from the serial class and sorts them into containers in preparation of db injection
 	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
 	std::string Fstype = buffer.giveStrVal( buffer.Sstype ); // server type
 	std::string Fsite = buffer.giveStrVal( buffer.Ssite ); // site
@@ -172,7 +214,7 @@ bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype,
 	int num = 5; // this is  temporary until I write it's hook in the serial class.
 	std::stringstream anum1;
 	anum1 << num;
-	dbaselogger.log( "Retrieving values for storage in database.", 1 );
+	GDLogger.log( "Retrieving values for storage in database.", 1 );
 	std::string tanum = anum1.str();
 	storeQueryData( Fatype, 0 );
 	storeQueryData( Fhost, 1 );
@@ -193,46 +235,19 @@ bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype,
 	}
 	std::cout<< std::endl << Fhost << std::endl; */
 //	std::cout << buffer.giveStrVal( buffer.Shname ) << std::endl;
-	dbaselogger.log( "getQueryData() completed.", 0 );
+	GDLogger.log( "getQueryData() completed.", 0 );
 }
 
 void dbase::storeQueryData( const std::string &fsval, const int &posid ) {
-	dbaselogger.log( "storeQueryData() called.", 0 );
+	GDLogger.log( "storeQueryData() called.", 0 );
 	inval[posid] = fsval;
 }
 
 dbase::dbase() { // overrides default constructor for dbase class
-	dbaselogger.log( "Initializing Database Module.", 1 );
-	dbaselogger.log( "dbase() called.", 0 );
+	GDLogger.log( "Initializing Database Module.", 1 );
+	GDLogger.log( "dbase() called.", 0 );
 	// initialize the size of the query data storage vector
 	inval.resize(16);
 	// getQueryData(); // retrieve data to be entered into the database
 }
-
-bool dbase::sQuery( const std::string &data, const std::string &table, const std::string &column ) { // runs a generic query 
-	dbaselogger.log( "sQuery() called.", 0 ); // ~not actually used~
-
-	mysqlpp::Connection con( false ); // establish connection to db server
-	if ( con.connect( dbname, dbhost, dbuser, dbpass ) ) {
-		std::stringstream qss;
-		qss  << "SELECT * FROM `" << table << "`.`" << dbname << "` WHERE " << column << " = ' " << data << "';";
-		std::string qs = qss.str();
-		dbaselogger.log( qs, 1 );
-		mysqlpp::Query query = con.query( qs );
-		mysqlpp::StoreQueryResult res = query.store();
-		// return true  if the value was found, false if the result set was of size sero.
-		if ( res.size() < 1 ) {
-			dbaselogger.log( "Value not found in database.", 1 );
-			return false;
-		}
-		else {
-			dbaselogger.log( "Value found in database.", 1 );
-			return true;
-		}
-	}
-	else {
-		dbaselogger.log( "Failed to retrieve rows from database.", 2 );
-		return false;
-	}
-}
-
+dbase thread;
