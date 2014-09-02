@@ -17,14 +17,15 @@
 #include "drive.h"
 using std::vector;
 const int bsize = 1024;
-
+static const int valstrucpos[] = { 0, 1, 5, 15, 16, 36, 37, 38, 39, 577, 578, 579, 580, 581, 582, 583, 584, 585, 586 };
+vector<int> Ssflags ( valstrucpos, valstrucpos + sizeof( valstrucpos ) / sizeof(valstrucpos[0]) );
 const int Sserverstart = 6;
-const int Smacstart = 18;
-const int Sdbitstart = 590;
+const int Smacstart = 1;
+const int Sdbitstart = 39;
 const int Shbitstart = 1;
-const int Sslen = 9;
+const int Sslen = 10;
 const int Shlen = 4;
-const int Sdlen = 612;
+const int Sdlen = 576;
 const int Smlen = 18;
 const int Sblen = 1024;
 
@@ -49,9 +50,9 @@ serial::serial(){ // overrides default constructor
 		for( int i = 0; i < Sdlen; i++ ) {
 			Sdbits[i] = 0;
 		}
-		//for( int i = 0; i < Smlen; i++ ) {
-		//	Smbits[i] = 0;
-		//}
+		for( int i = 0; i < Smlen; i++ ) {
+			Smbits[i] = 0;
+		}
 		Srstate = "Not Running";
 		Sstype = "r";
 		Ssite = "AMS3";
@@ -75,6 +76,17 @@ serial::serial(){ // overrides default constructor
 		boost::this_thread::interruption_point();
 	}
 }
+void serial::readDVec( std::vector<int> &vec ) {
+	GDLogger.log("readDVec() called.", 0 );
+	std::stringstream logdebug;
+	for( int i = 0; i > Sdlen; i++ ) {
+		vec[i] = Sdbits[i];
+		logdebug << vec[i];
+		
+	}
+	std::string debuglogout = logdebug.str();
+	GDLogger.log( debuglogout, 0 );
+}
 void serial::readBits( const std::vector<int> &buff ){
 	try{
 		GDLogger.log( "Called readBits", 0);
@@ -96,11 +108,20 @@ void serial::readBits( const std::vector<int> &buff ){
 			Smbits[i] = buff[f];
 			f++;
 		}
-		int m = Sdbitstart;
-		/*for ( int i = 0; i < m; i++ ) {
-			Sdbits[i] = buff[m];
-			m++;
-		} *///commenting this out until I write the actual drive bit reading util.
+		if( (buff[35] == 1) /* && (buff[36] == 9) && (buff[37] == 9) && (buff[38] == 9)  && (buff.size() >= 616 )*/ ) {
+			std::stringstream logoutp;
+			int m = Sdbitstart;
+			for ( int i = 0; i < Sdlen; i++ ) {
+				Sdbits[i] = buff[m];
+				m++;
+				logoutp << Sdbits[i];
+			} //commenting this out until I write the actual drive bit reading util.
+			std::string logput = logoutp.str();
+			GDLogger.log( logput, 0 );
+		}
+		else {
+			GDLogger.log( "Stream too small for drive data.", 3 );
+		}
 	}
 	catch( std::exception &e ) {
 		std::stringstream errstream;
@@ -319,8 +340,10 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 
 bool serial::deSerialize() { // wrapper function that calls deserialization functioons, then validates, and returns true if successful, false if not.
 	GDLogger.log( "deSerialize() called.", 0 );
-	Sstype = mapp.getKeyFromMap( Ssbits[0], Ssbits[1], 1 ); 
-	Ssite = mapp.getKeyFromMap( Ssbits[5], Ssbits[6], 2 );
+	/*Sstype = mapp.getKeyFromMap( Ssbits[0], Ssbits[1], 1 ); 
+	Ssite = mapp.getKeyFromMap( Ssbits[5], Ssbits[6], 2 ); */
+	Sstype = readSType( Ssbits );
+	Ssite = readSite( Ssbits );
 	readGC( Ssbits );
 	readRecover( Ssbits );
 	getHostName( Shbits );
@@ -393,7 +416,10 @@ void serial::readGC( const vector<int> &fsbits ) {
 			break;
 		default:
 			Sservices = "Err";
-			GDLogger.log( "error on line 147: serial.cpp: Invalid value received for Sservices.", 3);
+			std::stringstream val;
+			val << "Error on line 418: serial.cp: Invalid value received for Sservices: " << fsbits[2];
+			std::string vv = val.str();
+			GDLogger.log( vv, 3);
 			break;
 	}
 	//catch( int e ) { // need to add this back in for exception handling after I write custom excaption subclass
@@ -447,7 +473,7 @@ std::string serial::readType( const std::string &fstype ) { // takes the server 
 	GDLogger.log( "readType() completed.", 0 );
 }
 
-/*
+
 std::string serial::readSType( const vector<int> &sbits ) {
 	GDLogger.log( "readSType() called.", 0 );
 	int stcode = sbits[0];
@@ -499,7 +525,7 @@ std::string serial::readSType( const vector<int> &sbits ) {
 	}
 	return "Err";
 }
-*/
+
 
 void serial::readAType( const vector<int> &sbits ) {
 	GDLogger.log( "Determined asset-type to be 'server'.", 1 );
@@ -566,7 +592,7 @@ std::string serial::readID(  const vector<unsigned long int> &hbits, const std::
 		return id;
 	}
 }
-/*
+
 // Reads the site identifier code
 std::string serial::readSite( const vector<int> &fsbits ) {
 	GDLogger.log( "readSite() called.", 0 );
@@ -607,7 +633,6 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 		return "ERR";
 	}
 }
-*/
 
 std::string serial::getTLD( const std::string &fsite ) {
 	GDLogger.log( "getTLD() called.", 0 ); // if site is not in the GNsites list, it's gf, if it is, GN
@@ -641,7 +666,7 @@ void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembl
 		sss << Suid << "." << Ssite; // host shortname, mostly for server + drive matching
 		Sshname = sss.str();
 		sss.str("");
-		lstream << "Determined Host Shortname to be: " << Sshname << ".";
+		lstream << "Determined hostname to be: " << Shname << ". Determined Host Shortname to be: " << Sshname << ".";
 		lstr = lstream.str();
 		lstream.str("");
 		GDLogger.log( lstr, 1 );
@@ -650,10 +675,17 @@ void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembl
 		ss << Suid << "." << Ssite << "." << Stld; // for 'non-typed' servers *no .gc. or .nntp.
 		Shname = ss.str();
 		ss.str("");
-		ss << "Determined Hostname to be: " << Shname <<". Unable to determine host Shortname.";
+		ss << "Determined Hostname to be: " << Shname <<".";
 		std::string lmsg = ss.str();
 		ss.str("");
-		GDLogger.log( lmsg, 2 );
+		GDLogger.log( lmsg, 0 );
+		ss <<  Suid << Ssite;
+		Sshname = ss.str();
+		ss.str("");
+		ss << "Determined Host Shortname to be: " << Sshname << ".";
+		lmsg = ss.str();
+		ss.str("");
+		GDLogger.log( lmsg, 0 );
 	}
 	GDLogger.log( "getHostName() completed.", 0 );
 }

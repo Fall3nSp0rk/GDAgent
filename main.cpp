@@ -30,6 +30,7 @@
 #include<algorithm>
 #include<exception>
 #include "include/drive.h"
+#include "include/mmapper.h"
 using boost::asio::ip::tcp;
 
 const int max_length = 1024;
@@ -41,7 +42,18 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens hhe
 	try {
 		boost::system::error_code ec; // declare an error object ot collect exceptions
 		ser.readBits( buffer_data ); //read from buffer into saod object
-		// ddrive dd( ser.Sdnum, ser.Sshname, ser.Sdbits );
+		std::vector<int> dbuff;
+		dbuff.resize(616);
+		if( buffer_data.size() >=616 ) {
+			//ser.readDVec( dbuff );
+			for( int i = 0; i < 576; i++ ) {
+				dbuff[i] = ser.Sdbits[i];
+			
+			}
+		}
+		int ddnum = ser.Sdnum;
+		std::string dshname = ser.Sshname;
+		ddrive dd( ddnum, dshname, dbuff );
 		bool dsvalidated = ser.deSerialize(); // deserialize data
 		if(!dsvalidated) { // self explanatory
 			GDLogger.log( "Deserialized data validation returned as false.", 3 );
@@ -49,7 +61,7 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens hhe
 		else { // I hate this function. Reads from the serial object to the DB object.
 			thread.getQueryData( ser.Srstate, ser.Sstype, ser.Ssite, ser.Shname, ser.Satype, ser.Sservices, ser.Sanum, ser.Sshname, ser.Smac, ser.Svarfill, ser.Sdnum ); // handing all the data off to the database module.
 			thread.runQuery(); // runs all the queries necessary to update or insert
-			
+			dd.readDriveData( dbuff );
 			
 		}
 		if( !ec ) {
@@ -116,8 +128,28 @@ std::vector<int> sanData( char bdata[max_length] ) { // sanitizes and trims rece
 }
 bool valSerialData( const vector<int> &vdata ) { // validates that all data conforms to structures set out in inflow doc
 	if( (vdata[0] == 0 && vdata[1] == 0 )
-			&& ( vdata[5] == 1 && vdata[13] == 1)
-			//&& ( vdata[14] == 0 && vdata[15] == 1)
+			&& ( vdata[5] == 1 && vdata[15] == 0)
+			&& ( vdata[16] == 1 && vdata[35] == 1 )/*
+			&& ( vdata[36] == 9 && vdata[37] == 9 )
+			&& ( vdata[39] == 9 && vdata[40] == 0 )
+			&& ( vdata[56] == 0 && vdata[72] == 0 )
+			&& ( vdata[88] == 0 && vdata[104] == 0 )
+			&& ( vdata[120] == 0 && vdata[136] == 0 )
+			&& ( vdata[152] == 0 && vdata[168] == 0 )
+			&& ( vdata[184] == 0 && vdata[200] == 0 )
+			&& ( vdata[216] == 0 && vdata[232] == 0 )
+			&& ( vdata[248] == 0 && vdata[264] == 0 )
+			&& ( vdata[280] == 0 && vdata[296] == 0 )
+			&& ( vdata[312] == 0 && vdata[328] == 0 )
+			&& ( vdata[344] == 0 && vdata[360] == 0 )
+			&& ( vdata[376] == 0 && vdata[392] == 0 )
+			&& ( vdata[408] == 0 && vdata[424] == 0 )
+			&& ( vdata[440] == 0 && vdata[456] == 0 )
+			&& ( vdata[472] == 0 && vdata[488] == 0 )
+			&& ( vdata[504] == 0 && vdata[520] == 0 )
+			&& ( vdata[536] == 0 && vdata[552] == 0 )
+			&& ( vdata[568] == 0 && vdata[584] == 0 )
+			&& ( vdata[600] == 0 && vdata[616] == 0 )*/
 			) {
 		GDLogger.log( "Datastream Validated.", 1 );
 		return true;
@@ -265,7 +297,7 @@ int main( ) {
 	boost::system::error_code er;
 	GDLogger.log( "GDAgent v 0.5 Started. Initializing.", 1 );
 	GDLogger.log( "Daemonizing....", 1 );
-	seedDaemon();
+	//seedDaemon();
 	if( !er ) { // if EC is still empty, alls well
 		GDLogger.log( "Daemonizing successful.", 1 );
 	}

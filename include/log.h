@@ -22,6 +22,6 @@ class logger {
 		pid_t Lpid;
 		int Llvl;
 };
-
+extern std::ofstream lmsg;
 extern logger GDLogger;
 #endif

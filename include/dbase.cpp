@@ -13,7 +13,7 @@
 //#include"serial.h"
 
 bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
-	bool ex = checkExists( qvec[0], "gd_drives", "host_shortname" );
+	bool ex = checkExists( qvec[0], "gd_drives", "host_shortname", "drive_label", qvec[1]);
 	std::stringstream qqquery;
 	if( ex ) {
 		qqquery << "UPDATE `" << dbname << "`.`gd_drives` SET spool_number=" << mysqlpp::quote_only << qvec[2];
@@ -23,22 +23,24 @@ bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 		qqquery << ";";
 		std::string fquery = qqquery.str();
 		qqquery.str("");
+		GDLogger.log( fquery, 1 );
 		update( fquery );
 		return true;
 	}
 	else {
 		qqquery << "INSERT INTO `" << dbname << "`.`gd_drives` VALUES ( " << mysqlpp::quote_only << "Hard Drive";
-		qqquery << ", " << mysqlpp::quote_only << " " << ", " << mysqlpp::quote_only << inval[5];
-		qqquery << ", " << mysqlpp::quote_only << qvec[0] << ", " << mysqlpp::quote_only << "0";
-		qqquery << ", " << mysqlpp::quote_only << qvec[1];
-		qqquery << ", " << mysqlpp::quote_only << qvec[2] << ", " << mysqlpp::quote_only << "0";
-		qqquery << ", " << mysqlpp::quote_only << "0" << ", " << mysqlpp::quote_only << qvec[3];
+		qqquery << ", " << "'" << qvec[0] << "/" << qvec[1] << "', " << mysqlpp::quote_only << inval[5];
+		qqquery << ", " << mysqlpp::quote_only << qvec[0] << ", " << mysqlpp::quote_only << qvec[1];
+		qqquery << ", " << mysqlpp::quote_only << "0";
+		qqquery << ", " << mysqlpp::quote_only << qvec[2];
+		qqquery << ", " << mysqlpp::quote_only << qvec[3];
 		qqquery << ", " << mysqlpp::quote_only << qvec[5] << ", " << mysqlpp::quote_only << qvec[4];
 		qqquery << ", " << mysqlpp::quote_only << qvec[6] << ", " << mysqlpp::quote_only << qvec[7];
-		qqquery << ", " << mysqlpp::quote_only << "0" << ", " << mysqlpp::quote_only << "true";
+		qqquery << ", " << mysqlpp::quote_only << "0" << ", '1'";
 		qqquery << ");";
 		std::string ffquery = qqquery.str();
 		qqquery.str("");
+		GDLogger.log( ffquery, 1 );
 		insert( ffquery );
 		return true;
 	}
@@ -47,7 +49,7 @@ bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 
 void dbase::runQuery() {
 	GDLogger.log( "runQuery() called.", 0 );
-	bool ex = checkExists( inval[1], "gd_servers", "hostname" );
+	bool ex = checkExists( inval[1], "gd_servers", "hostname", "0", "0" );
 	if ( ex == true ) {
 		updateServer();
 	}
@@ -56,13 +58,19 @@ void dbase::runQuery() {
 	}
 	GDLogger.log( "runQuery() completed.", 0 );
 }
-bool dbase::checkExists( const std::string &data, const std::string &table, const std::string &field ) { // check if the received data matches anything already in the database
+bool dbase::checkExists( const std::string &data, const std::string &table, const std::string &field, const std::string &f2, const std::string &d2 ) { // check if the received data matches anything already in the database
 	GDLogger.log( "checkExists() called.", 0 );
 	GDLogger.log ( "Checking if host already in Database...", 1 );
 	mysqlpp::Connection con3( false );
 	if ( con3.connect( dbname, dbhost, dbuser, dbpass ) ) {
 		std::stringstream queryss;
-		queryss<< "SELECT hostname FROM `" << dbname << "`.`" << table << "` WHERE " << field << " = " << mysqlpp::quote_only << data << ";";
+		queryss<< "SELECT " << field << " FROM `" << dbname << "`.`" << table << "` WHERE " << field << " = " << mysqlpp::quote_only << data;
+		if( f2 == "0" ) {
+			queryss  << ";";
+		}
+		else {
+			queryss << "AND " << f2 << "=" << mysqlpp::quote_only << d2 << ";";
+		}
 		std::string qstr = queryss.str();
 		GDLogger.log( qstr, 1 );
 		mysqlpp::Query query = con3.query( qstr );
@@ -156,9 +164,9 @@ void dbase::inServer() {
 	std::stringstream iss;
 	iss<< "INSERT INTO `" << dbname << "`.`gd_servers` VALUES( ";
 	for( int i = 0; i < 13; i++ ) {
-		iss<< mysqlpp::quote_only << inval[i] << ", ";
+		iss << mysqlpp::quote_only << inval[i] << ", ";
 	}
-	iss<< mysqlpp::quote_only << "0" << ", NOW() );";
+	iss << mysqlpp::quote_only << "0" << ", NOW() );";
 	std::string is = iss.str();
 	GDLogger.log( is, 1 );
 	insert( is );

@@ -30,6 +30,14 @@ std::string logger::tStamp(){
 void logger::readCfg() {
 	cfg::cfg conf( Lcfgfile );
 	Llvl = 0;
+
+	if( conf.keyExists( "logfile" ) ){
+		Lfile = conf.getValueOfKey<std::string>( "logfile" );
+	}
+	else {
+		Lfile = "/var/log/GDlog";
+		log( "No Logfile specified in cfg file. Using default.", 1 );
+	}
 	if( conf.keyExists( "DebugLevel" ) ) {
 		int debuglevel = conf.getValueOfKey<int>( "DebugLevel" );
 		std::stringstream d;
@@ -62,13 +70,6 @@ void logger::readCfg() {
 		}
 		Llvl = dlvl;
 	}
-	if( conf.keyExists( "logfile" ) ){
-		Lfile = conf.getValueOfKey<std::string>( "logfile" );
-	}
-	else {
-		Lfile = "/var/log/GDlog";
-		log( "No Logfile specified in cfg file. Using default.", 1 );
-	}
 	if( conf.keyExists( "ListenPort" ) ) {
 		Llport = conf.getValueOfKey<int>( "ListenPort" );
 		log( "Listen port Read from cfg file.", 1 );
@@ -96,9 +97,10 @@ pid_t logger::getPID() {
 bool logger::writeLog( const std::string &message ) {
 	Lpid = getPID();
 	Lthread = getThread();
-	std::ofstream lmsg( Lfile, std::ofstream::app );
 	std::string ts = tStamp();
+	std::ofstream lmsg( Lfile, std::ofstream::app );
 	lmsg << ts << " [" << Lpid << "] (" << Lthread << ") " << message;
+	lmsg.close();
 	return true;
 }
 

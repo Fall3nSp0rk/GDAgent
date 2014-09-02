@@ -17,7 +17,7 @@ class dbase{
 	private:
 		void updateServer();
 		void inServer();
-		bool checkExists( const std::string &data, const std::string &table, const std::string &field );
+		bool checkExists( const std::string &data, const std::string &table, const std::string &field, const std::string &f2, const std::string &d2 );
 		void storeQueryData( const std::string &fsval, const int &posid ); // written
 		std::vector<std::string> inval;
 		std::string getLocFromSite( const std::string &site );

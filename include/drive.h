@@ -5,7 +5,7 @@ class ddrive {
 	public:
 		static std::vector<int> DEFAULT_VECTOR;
 		ddrive( const int &dnum = 36, const std::string &hsname = "r00.AMS", const vector<int> &ddata = DEFAULT_VECTOR ); 
-		bool readDriveData();
+		bool readDriveData( const vector<int> &data1 );
 		vector<std::string> qdata;
 	protected:
 		int Ddnum;

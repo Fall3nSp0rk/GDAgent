@@ -2,12 +2,60 @@ server -> socket connection -> new thread -> data transmitted by server line-by-
 
 
 
+validation check values:
+	-> buffer[0] = 0
+	-> buffer[1] = 0
+	-> buffer[5] = 1
+	-> buffer[15] = 0
+	-> buffer[16] = 1
+	-> buffer[36] = 1
+	-> buffer[37] = 9
+	-> buffer[38] = 9
+	-> buffer[39] = 9
+	-> buffer[56] = 1
+	-> buffer[72] = 1
+	-> buffer[88] = 1
+	-> buffer[104] = 1
+	-> buffer[120] = 1
+	-> buffer[136] = 1
+	-> buffer[152] = 1
+	-> buffer[168] = 1
+	-> buffer[184] = 1
+	-> buffer[200] = 1
+	-> buffer[216] = 1
+	-> buffer[232] = 1
+	-> buffer[248] = 1
+	-> buffer[264] = 1
+	-> buffer[280] = 1
+	-> buffer[296] = 1
+	-> buffer[312] = 1
+	-> buffer[328] = 1
+	-> buffer[344] = 1
+	-> buffer[360] = 1
+	-> buffer[376] = 1
+	-> buffer[392] = 1
+	-> buffer[408] = 1
+	-> buffer[424] = 1
+	-> buffer[440] = 1
+	-> buffer[456] = 1
+	-> buffer[472] = 1
+	-> buffer[488] = 1
+	-> buffer[504] = 1
+	-> buffer[520] = 1
+	-> buffer[536] = 1
+	-> buffer[552] = 1
+	-> buffer[568] = 1
+	-> buffer[584] = 1
+	-> buffer[600] = 1
+	-> buffer[616] = 1
 
 data arrays:
 char buffer[1024]
 	-> buffer[0]
 		-> always "0" (start)
-	-> buffer[1] - buffer[4]
+	-> buffer[1]
+		-> always "0" (start)
+	->buffer[2]- buffer[4]
 		-> 4-character max server number, expressed as zeroes before significant digits, e.g. 0250, or 0025, or 0003
 	
 	-> buffer[5] = "1" (next section)
@@ -30,8 +78,11 @@ char buffer[1024]
 		-> 20 = "num server"
 		-> 21 = "border server"
 		-> 22 = "backlog server"
-		-> 23 = "gcf server"
-		-> 24 = "xref server"
+		-> 23 = "buffer server"
+		-> 24 = "gcf server"
+		-> 25 = "xref server"
+		-> 26 = "search"
+		-> 27 = "logstash"
 		-> 30 = "vmhost server"
 		-> 31 = "vpnhost server"
 		-> 32 = "vpn virtual server"
@@ -98,132 +149,12 @@ char buffer[1024]
 		-> 3 = "other"
 	-> buffer[15] = server_code[9] (Not mapped, array terminatora)
 	-> buffer[16] = "1" (next section)
-	-> buffer[ 17 - 409 ] (reserved for description of arrays)
-	-> buffer[410] = "1" (next section)
-	-> buffer[ 411 - 1023 ] = drive bits
-		-> 411 = d0state[0] > drive number char 1
-		-> 412 = d0state[1] > drive number char 2
-		------------------------------------------------
-		-> 413 = d0state[2] > spool number char 1
-		-> 414 = d0state[3] > spool number char 2
-		------------------------------------------------
-		-> 415 = d0state[4] > spool fill % char 1
-		-> 416 = d0state[5] > spool fill % char 2
-		-> 417 = d0state[6] > spool fill % char 3
-		------------------------------------------------
-		-> 418 = d0state[7] > spool status char
-		------------------------------------------------
-		-> 419 = d0state[8] > drive status char
-		------------------------------------------------
-		-> 420 = d0state[9] > pending sector char 1
-		-> 421 = d0state[10] > pending sector char 2
-		-> 422 = d0state[11] > pending sector char 3
-		-> 423 = d0state[12] > pending sector char 4
-		------------------------------------------------
-		-> 424 = d0state[13] > reallocated sector char 1
-		-> 425 = d0state[14] > reallocated sector char 2
-		-> 426 = d0state[15] > reallocated sector char 3
-		-> 427 = d0state[16] > reallocated sector char 4
-		------------------------------------------------
-	-> buffer[1024] = "0" (end of data)
-
-
-
-
-
-
-17 characters per drive
-612 total characters
-
-
-
-
-
-	-> drivestate[x][1][z] = spool number (2 digits, rest * characters)
-	-> drivestate[x][2][z] = spool fill percent (3 digits, rest * characters)
-	-> drivestate[x][3][0] = spool status (1 digit, rest * characters) 0-4
-		-> 0 = (OFF)
-		-> 1 = (RW)
-		-> 2 = (NO/ERROR)
-		-> 3 = (RO)
-		-> 4 = (NO)
-	-> drivestate[x][4][0] = drive status (1 digit, rest * characters) 0-3
-		-> 0 = drive missing/failed
-		-> 1 = drive healthy
-		-> 2 = drive degraded
-		-> 3 = drive critical
-	-> drivestate[x][5][z] = drive pending sectors (max 4 digits)
-	-> drivestate[x][6][z] = drive reallocated sectors (max 4 digits)
-int server_code[8]
-	-> server_code[0] = server type - 0-9?
-		-> 0 = r-server
-		-> 1 = h-server
-		-> 2 = t-server
-		-> 3 = xref server
-		-> 4 = gcf(Feeder) server
-		-> 5 = border server
-		-> 6 = backlog server
-		-> 7 = num server
-		-> 8 = serv machine 
-		-> 9 = other
-	-> server_code[1] = overall health - 0-3
-		-> 0 ="Failed/not responding
-		-> 1 = Healthy/functioning normally/in service
-		-> 2 = Degraded - errors occuring, etc, but has not been out of serviced
-		-> 3 = Critical - function-impeding problems, or server out of service.
-	-> server_code[2] = gc status/nntp status - 0-2
-		-status> 0 = gc not running, articles not passing normally
-		-> 1 = gc running, articles passing normally.
-		-> 2 = gc running, articles not passing normally.
-	-> server_code[3] = Recovery status - 0-3
-		-> 0 = Recovery not running.
-		-> 1 = Recover running and healthy
-		-> 2 = Recovery running, but defunct processes found. (infected)
-		-> 3 = Recovery has gone defunct (defunct)
-	-> server_code[4] = number of drives - 0-2
-		-> 0 = other
-		-> 1 = 12 drives
-		-> 2 = 36 drives
-	-> server_code[5] = site shortcode character 1 (region code) 
-		-> 0 = tx region
-		-> 1 = North America Region
-		-> 2 = EU region
-		-> 3 = East Asia region
-		-> 4 = AU region
-	-> server_code[6] = site shortcode 2 - full combinations below
-		-> 00 = aus
-		-> 01 = aus2
-		-> 10 = dca
-		-> 11 = dca1
-		-> 12 = dca2
-		-> 13 = dca3
-		-> 14 = lax
-		-> 15 = mia
-		-> 16 = tor
-		-> 17 = nyc
-		-> 20 = ams
-		-> 21 = ams1? (if it ever exists)
-		-> 22 = ams2
-		-> 23 = ams3
-		-> 24 = lon
-		-> 25 = zur
-		-> 30 = hkg
-		-> 31 = sgp
-		-> 32 = tok
-		-> 33 = syd
-	-> server_code[7] = combined traffic
-		-> 0 = between 0 and 10 mb/s in/out avg traffic
-		-> 1 = between 11 and 100 mb/s in/out avg traffic
-		-> 2 = between 101 and 500 mb/s in/out avg traffic
-		-> 3 = between 501 mb/s and 1g/s in/out avg traffic
-		-> 4 = between 1.1g/s and 3.0g/s in/out avg traffic
-		-> 5 = between 3.1g/s and 5.0g/s in/out avg traffic
-		-> 6 between 5.1g/s and 10.0g/s in/out avg traffic
-	-> server_code[8] = array terminating character
-
-
-	drivebits
-
+	-> buffer[17 - 35] (mac address segment)
+	-> buffer[36] = "1" (next section)
+	-> buffer[37] = "9" (dbitstart1)
+	-> buffer[38] = "9" (dbitstart2)
+	-> buffer[39] = "9" (dbitstart3)
+	-> buffer[40-576] = drive desc
 		->drive_code[0] = drive number first digit
 		->drive_code[1] = drive number second digit
 			-> 00 = 0:sda
@@ -274,12 +205,16 @@ int server_code[8]
 			-> 000 = 0 re/all sectors
 			-> 999 = 999+ re/all sectors. same as pend.
 		-> drive_code[15] = terminator (0)
-
+	-> buffer[577] = 1 (Next Section)
+	-> buffer[578] = 9
+	-> buffer[579] = 9 ( this is the array descriptor start flag
+	-> buffer[580] = 9
+	-> buffer[581] = 9
 
 			ARRAY DESCRIPTION
-	buffer[37] = 1 start array descriptors
-	buffer[38] = number of arrays 1st digit
-	buffer[39] = number of arrays second digit
+	-> buffer[582] = 1 start array descriptors
+	-> buffer[583] = number of arrays 1st digit
+	-> buffer[584] = number of arrays second digit
 	
 
 

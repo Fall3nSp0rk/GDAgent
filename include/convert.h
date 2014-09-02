@@ -1,4 +1,6 @@
 // convert class
+#ifndef __CONVERT_H
+#define __CONVERT_H
 #include<iostream>
 #include<string>
 #include<sstream>
@@ -39,3 +41,5 @@ void exitWithError( const std::string &error ) {
 	std::cin.get();
 	exit(EXIT_FAILURE);
 }
+
+#endif

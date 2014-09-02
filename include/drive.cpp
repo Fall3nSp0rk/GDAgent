@@ -19,7 +19,7 @@
 #include "mmapper.h"
 #include "drive.h"
 using std::vector;
-const int maxvlen = 612; // Maximum size of the ddrive bit vector
+const int maxlen = 576; // Maximum size of the ddrive bit vector
 const int vdlen = 16; // constant value. Drive descriptors should always be 16 bytes.
 
 ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &ddata ) {
@@ -27,7 +27,7 @@ ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &d
 	GDLogger.log( "Setting Default Values and reading data into object.", 0 );
 	Ddnum = dnum;
 	Ddvblen = ddata.size();
-	Ddrivebits.resize( Ddvblen ); // apply the calculated ddrive vector size
+	Ddrivebits.resize( maxlen ); // apply the calculated ddrive vector size
 	Ddcode.resize( vdlen ); // resize the ddrive code segment for the appropriate size
 	qdata.resize( 8 );
 	Dhsname = hsname;
@@ -38,9 +38,13 @@ ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &d
 	Ddpath = "/dev/sda";
 	Dhstatus = "Failed";
 	Dspstate = "NO";
-	for( int i = 0; i < Ddvblen; i++ ) { // read the ddrive bits in
+	std::stringstream dedat;
+	for( int i = 0; i < maxlen; i++ ) { // read the ddrive bits in
 		Ddrivebits[i] = ddata[i];
+		dedat << Ddrivebits[i];
 	}
+	std::string debugdata = dedat.str();
+	GDLogger.log( debugdata, 0 );
 	for( int i = 0; i < vdlen; i++ ) { // initialize Ddcode to a default value of 16 0s
 		Ddcode[i] = 0;
 	}
@@ -49,22 +53,36 @@ ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &d
 
 // Destructor for ddrive class
 
-bool ddrive::readDriveData() {
+bool ddrive::readDriveData( const vector<int> &data1 ) {
 	GDLogger.log( "readDriveData() called.", 0 );
-	int f = 0;
+	int SequenceNumber = 0;
 	vector<bool> validated;
 	vector<bool> dbadded;
 	vector<bool> rval;
+	GDLogger.log( "Resizing vectors.", 0 );
+	rval.resize(Ddnum);
 	dbadded.resize( Ddnum );
 	validated.resize( Ddnum );
 	for( int i = 0; i < Ddnum; i++ ) {
+		GDLogger.log( "Setting rval to false...", 0 );
 		rval[i] = false;
 	}
+	
 	for( int i = 0; i < Ddnum; i++ ) {
 		for( int j = 0; j < vdlen; j++ ) {
-			Ddcode[j] = Ddrivebits[f];
-			f++;
+			Ddcode[j] = data1[SequenceNumber];
+			std::stringstream ff;
+			ff << "SN: "<< SequenceNumber << " " << Ddcode[j];
+			std::string mmm = ff.str();
+			ff.str("");
+			GDLogger.log( mmm, 0 );
+			SequenceNumber++;
 		}
+		std::stringstream lstr;
+		lstr << "Sequence Number: " << SequenceNumber;
+		std::string logm = lstr.str();
+		lstr.str("");
+		GDLogger.log( logm, 0 );
 		Ddpath = mapp.getKeyFromMap( Ddcode[0], Ddcode[1], 3 );
 		Dspnum = readSpoolNumber( Ddcode[2], Ddcode[3] );
 		Dhstatus = readDHState( Ddcode[4] );
@@ -77,7 +95,7 @@ bool ddrive::readDriveData() {
 			validated[i] = true;
 			GDLogger.log( "Converting data to strings for database insertion.", 1 ); 
 			std::stringstream qq;
-			qq << Dspnum;
+			qq << Ddcode[2] << Ddcode[3];
 			std::string qspnum = qq.str();
 			GDLogger.log( qspnum, 0 );
 			qq.str("");
@@ -93,6 +111,7 @@ bool ddrive::readDriveData() {
 			std::string qrsec = qq.str();
 			GDLogger.log( qrsec, 0);
 			qq.str("");
+			GDLogger.log( Dhsname, 0 );
 			qdata[0] = Dhsname;
 			qdata[1] = Ddpath;
 			qdata[2] = qspnum;
@@ -101,6 +120,8 @@ bool ddrive::readDriveData() {
 			qdata[5] = Dspstate;
 			qdata[6] = qpsec;
 			qdata[7] = qrsec;
+			GDLogger.log( Dhsname, 0);
+			GDLogger.log( Ddpath, 0 );
 			dbadded[i] = thread.runDriveQuery( qdata ); // still need  to write this  function
 		}
 		else {

@@ -10,6 +10,7 @@ class serial {
 		bool deSerialize();
 		std::string giveStrVal( const std::string &cval );
 		int giveIntVal( const int &cint );
+		void readDVec( std::vector<int> &vec );
 //	protected:
 		std::string Srstate;
 		std::string Sstype;
@@ -31,11 +32,11 @@ class serial {
 		void getHostName( const vector<unsigned long int> &fhbits ); // definition written
 		vector<int> Snbuff;
 		void readDNum( const vector<int>& sbits ); // definition written
-		// std::string readSType( const vector<int> &sbits ); // definition written
+		std::string readSType( const vector<int> &sbits ); // definition written
 		void readAType( const vector<int> &sbits ); // not implemented in this release, defaults to 0"server"
 		std::string readType( const std::string &fstype );
 		void readGC( const vector<int> &sbits ); // definition written
-		// std::string readSite( const vector<int> &sbits ); // definition written
+		std::string readSite( const vector<int> &sbits ); // definition written
 		void readMac( const vector<int> &mbits ); 
 		void readRecover( const vector<int> &sbits ); // definition written
 		std::string getTLD( const std::string &fsite ); // definition written

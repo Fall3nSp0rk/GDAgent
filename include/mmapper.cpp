@@ -172,4 +172,4 @@ void mmapper::createTypeMap() {
 		boost::this_thread::interruption_point();
 	}
 }
-mmapper mapp;
+mmapper::mmapper mapp;
