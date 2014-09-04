@@ -25,5 +25,5 @@ class dbase{
 		void update( const std::string &qquery );
 
 };
-extern dbase thread;
+//extern dbase thread;
 #endif

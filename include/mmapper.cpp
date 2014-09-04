@@ -10,8 +10,7 @@
 #include <stdlib.h>
 #include "log.h"
 #include "mmapper.h"
-
-
+#define _logger mlog
 mmapper::mmapper() {
 	createDriveLetterMap();
 	createSiteMap();
@@ -21,54 +20,68 @@ std::map<DLpair, std::string> mmapper::Ddlabel;
 std::map<TPCodeUidPair, std::string> mmapper::cachedData;
 std::map<RgCodeUidPair, std::string> mmapper::siteMap;
 std::string mmapper::getKeyFromMap( const int &key1, const int &key2, const int &mid ) {
+	//logger _logger;
 	switch( mid ) {
 		case 1: {
-			GDLogger.log( "Retrieving key values for Server Type.", 1 );
+			_logger.logstream << "Retrieving key values for Server Type.";
+			_logger.log( 1 );
 			auto it = cachedData.find(std::make_pair(key1, key2));
 			if( it != cachedData.end() ) {
-				GDLogger.log( "Successfully retrieved key value", 1 );
+				_logger.logstream << "Successfully retrieved key value";
+		_logger.log( 1 );
 				return it->second;
 			}
 			else {
-				GDLogger.log( "Failed to retrieve key.", 3 );
+				_logger.logstream << "Failed to retrieve key.";
+		_logger.log( 3 );
 				return "ERR";
 			}
 			break;
 		}
 		case 2: {
-			GDLogger.log( "Retrieving key values for Server Site.", 1 );
+			_logger.logstream << "Retrieving key values for Server Site.";
+			_logger.log( 1 );
 			auto it = siteMap.find(std::make_pair(key1, key2));
 			if( it != siteMap.end() ) {
-				GDLogger.log( "Successfully retrieved key value", 1 );
+				_logger.logstream << "Successfully retrieved key value";
+				_logger.log( 1 );
 				return it->second;
 			}
 			else {
-				GDLogger.log( "Failed to retrieve key.", 3 );
+				_logger.logstream << "Failed to retrieve key.";
+				_logger.log( 3 );
 				return "ERR";
 			}
 			break;
 		}
 		case 3: {
-			GDLogger.log( "Retrieveing key values for drive label", 1 );
+			_logger.logstream << "Retrieveing key values for drive label";
+				_logger.log( 1 );
 			auto it = Ddlabel.find( std::make_pair( key1, key2 ));
 			if( it != Ddlabel.end() ) {
-				GDLogger.log( "Successfully retrieved key value", 1 );
+				_logger.logstream << "Successfully retrieved key value";
+				_logger.log( 1 );
 				return it->second;
 			}
 			else {
-				GDLogger.log( "Failed to retrieve key.", 3 );
+				_logger.logstream << "Failed to retrieve key.";
+		_logger.log( 3 );
 				return "ERR";
 			}
 			break;
 		}
 		default:
-			GDLogger.log( "Invalid value passed to mapper! Err 3", 5 );
+			_logger.logstream << "Invalid value passed to mapper! Err 3";
+			_logger.log( 5 );
 			return "ERR";
 	}
 }
 void mmapper::createDriveLetterMap() {
-	GDLogger.log( "createDriveLetterMap() called.", 0 );
-	GDLogger.log( "Filling drive port:path map.", 1 );
+		//logger _logger;
+		_logger.logstream << "createDriveLetterMap() called.";
+		_logger.log( 0 );
+		_logger.logstream << "Filling drive port:path map.";
+		_logger.log( 1 );
 	if( Ddlabel.empty() ) {
 		Ddlabel.insert( std::make_pair( std::make_pair( 0, 0 ), "sda" ) );
 		Ddlabel.insert( std::make_pair( std::make_pair( 0, 1 ), "sdb" ) );
@@ -110,7 +123,9 @@ void mmapper::createDriveLetterMap() {
 }
 
 void mmapper::createSiteMap() {
-	GDLogger.log( "Loading Site Map.", 0 );
+		//logger _logger;
+		_logger.logstream << "Loading Site Map.";
+		_logger.log( 0 );
 	if ( siteMap.empty() ) {
 		siteMap.insert(std::make_pair(std::make_pair(0, 0), "AUS"));
 		siteMap.insert(std::make_pair(std::make_pair(0, 1), "AUS2"));
@@ -137,7 +152,9 @@ void mmapper::createSiteMap() {
 	}
 }
 void mmapper::createTypeMap() {
-	GDLogger.log( "Loading Type Map.", 0 );
+		//logger _logger;
+		_logger.logstream << "Loading Type Map.";
+		_logger.log( 0 );
 	try {
 		if ( cachedData.empty() ) { // if the map isn't already in memory, load it now with these values
 			cachedData.insert(std::make_pair(std::make_pair(0,0), "db")); // database server
@@ -164,12 +181,9 @@ void mmapper::createTypeMap() {
 		}
 	}
 	catch( std::exception &e ) {
-		std::stringstream errstream;
-		errstream << "Exception in thread: " << e.what();
-		std::string errstr = errstream.str();
-		errstream.str("");
-		GDLogger.log( errstr, 5 );
+		_logger.logstream << "Exception in thread: " << e.what();
+		_logger.log( 5 );
 		boost::this_thread::interruption_point();
 	}
 }
-mmapper::mmapper mapp;
+#undef _logger

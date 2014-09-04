@@ -2,14 +2,13 @@
 // contains functions for reading from buffer.
 #ifndef __SERIAL_H
 #define __SERIAL_H
+#define _logger slog
 using std::vector;
 class serial {
 	public:
 		serial();
 		void readBits( const std::vector<int> &buff );
 		bool deSerialize();
-		std::string giveStrVal( const std::string &cval );
-		int giveIntVal( const int &cint );
 		void readDVec( std::vector<int> &vec );
 //	protected:
 		std::string Srstate;
@@ -38,7 +37,7 @@ class serial {
 		void readGC( const vector<int> &sbits ); // definition written
 		std::string readSite( const vector<int> &sbits ); // definition written
 		void readMac( const vector<int> &mbits ); 
-		void readRecover( const vector<int> &sbits ); // definition written
+		void readRecover( const int &rcode ); // definition written
 		std::string getTLD( const std::string &fsite ); // definition written
 		bool validateHost( const std::string &fstype, const int &fsid, const std::string &fsite, const std::string &ftld );
 		vector<unsigned long int> Shbits;
@@ -46,8 +45,7 @@ class serial {
 		vector<int> Smbits;
 		int Ssid;
 		std::string Stld;
-		void debuf();
 	
 };
-extern serial ser;
+#undef _logger
 #endif

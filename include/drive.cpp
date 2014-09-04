@@ -18,17 +18,19 @@
 #include "dbase.h"
 #include "mmapper.h"
 #include "drive.h"
+#define _logger mlog
 using std::vector;
 const int maxlen = 576; // Maximum size of the ddrive bit vector
 const int vdlen = 16; // constant value. Drive descriptors should always be 16 bytes.
 
-ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &ddata ) {
-	GDLogger.log( "ddrive object initialized.", 0 );
-	GDLogger.log( "Setting Default Values and reading data into object.", 0 );
+ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata ) {
+	//logger _logger;
+	_logger.logstream << "ddrive object initialized.";
+	_logger.log( 0 );
+	_logger.logstream << "Setting Default Values and reading data into object.";
+	_logger.log( 0 );
 	Ddnum = dnum;
 	Ddvblen = ddata.size();
-	Ddrivebits.resize( maxlen ); // apply the calculated ddrive vector size
-	Ddcode.resize( vdlen ); // resize the ddrive code segment for the appropriate size
 	qdata.resize( 8 );
 	Dhsname = hsname;
 	Dspnum = 0;
@@ -38,51 +40,45 @@ ddrive::ddrive( const int &dnum, const std::string &hsname, const vector<int> &d
 	Ddpath = "/dev/sda";
 	Dhstatus = "Failed";
 	Dspstate = "NO";
-	std::stringstream dedat;
-	for( int i = 0; i < maxlen; i++ ) { // read the ddrive bits in
-		Ddrivebits[i] = ddata[i];
-		dedat << Ddrivebits[i];
+	_logger.logstream << "Drive Data bits: ";
+	for( unsigned int i = 0; i < ddata.size(); i++ ) { // read the ddrive bits in
+		Ddrivebits.push_back( ddata[i] );
+		_logger.logstream << Ddrivebits[i];
 	}
-	std::string debugdata = dedat.str();
-	GDLogger.log( debugdata, 0 );
-	for( int i = 0; i < vdlen; i++ ) { // initialize Ddcode to a default value of 16 0s
-		Ddcode[i] = 0;
-	}
-	GDLogger.log( "Drive Object Initialization Completed.", 0 );
+	_logger.log(  0 );
+	_logger.logstream << "Drive Object Initialization Completed.";
+	_logger.log( 0 );
 }
 
 // Destructor for ddrive class
 
-bool ddrive::readDriveData( const vector<int> &data1 ) {
-	GDLogger.log( "readDriveData() called.", 0 );
+bool ddrive::readDriveData( const vector<int> &data1, dbase db ) {
+	mmapper::mmapper mapp;
+	//logger _logger;
+	_logger.logstream << "readDriveData() called.";
+	_logger.log( 0 );
 	int SequenceNumber = 0;
 	vector<bool> validated;
 	vector<bool> dbadded;
 	vector<bool> rval;
-	GDLogger.log( "Resizing vectors.", 0 );
-	rval.resize(Ddnum);
-	dbadded.resize( Ddnum );
-	validated.resize( Ddnum );
+	_logger.logstream << "Resizing vectors.";
+	_logger.log( 0 );
 	for( int i = 0; i < Ddnum; i++ ) {
-		GDLogger.log( "Setting rval to false...", 0 );
-		rval[i] = false;
+		_logger.logstream << "Setting rval to false...";
+		_logger.log( 0 );
+		rval.push_back( false );
 	}
-	
+	Ddcode.resize( vdlen );
+	dbadded.resize( Ddnum );
 	for( int i = 0; i < Ddnum; i++ ) {
 		for( int j = 0; j < vdlen; j++ ) {
 			Ddcode[j] = data1[SequenceNumber];
-			std::stringstream ff;
-			ff << "SN: "<< SequenceNumber << " " << Ddcode[j];
-			std::string mmm = ff.str();
-			ff.str("");
-			GDLogger.log( mmm, 0 );
+			_logger.logstream << "SN: "<< SequenceNumber << " " << Ddcode[j];
+			_logger.log( 0 );
 			SequenceNumber++;
 		}
-		std::stringstream lstr;
-		lstr << "Sequence Number: " << SequenceNumber;
-		std::string logm = lstr.str();
-		lstr.str("");
-		GDLogger.log( logm, 0 );
+		_logger.logstream << "Sequence Number: " << SequenceNumber;
+		_logger.log( 0 );
 		Ddpath = mapp.getKeyFromMap( Ddcode[0], Ddcode[1], 3 );
 		Dspnum = readSpoolNumber( Ddcode[2], Ddcode[3] );
 		Dhstatus = readDHState( Ddcode[4] );
@@ -92,26 +88,32 @@ bool ddrive::readDriveData( const vector<int> &data1 ) {
 		Drsec = read3DigitVals( Ddcode[12], Ddcode[13], Ddcode[14] );
 		bool DDValid = true;
 		if( DDValid ) {
-			validated[i] = true;
-			GDLogger.log( "Converting data to strings for database insertion.", 1 ); 
+			validated.push_back( true );
+			_logger.logstream << "Converting data to strings for database insertion.";
+			_logger.log( 1 ); 
 			std::stringstream qq;
 			qq << Ddcode[2] << Ddcode[3];
 			std::string qspnum = qq.str();
-			GDLogger.log( qspnum, 0 );
+			_logger.logstream << "Drive spool number: " << qspnum;
+			_logger.log(  0 );
 			qq.str("");
 			qq << Dspfill;
 			std::string qspfill = qq.str();
-			GDLogger.log( qspfill, 0 );
+			_logger.logstream << "Drive spool fill percentage: " << qspfill;
+			_logger.log( 0 );
 			qq.str("");
 			qq << Dpsec;
 			std::string qpsec = qq.str();
-			GDLogger.log( qpsec, 0 );
+			_logger.logstream << "Drive Pending Sectors: " << qpsec;
+			_logger.log( 0 );
 			qq.str("");
 			qq << Drsec;
 			std::string qrsec = qq.str();
-			GDLogger.log( qrsec, 0);
+			_logger.logstream << "Drive Reallocated Sectors: " << qrsec;
+			_logger.log( 0 );
 			qq.str("");
-			GDLogger.log( Dhsname, 0 );
+			_logger.logstream << "Drive Host Shortname: " << Dhsname;
+			_logger.log( 0 );
 			qdata[0] = Dhsname;
 			qdata[1] = Ddpath;
 			qdata[2] = qspnum;
@@ -120,18 +122,20 @@ bool ddrive::readDriveData( const vector<int> &data1 ) {
 			qdata[5] = Dspstate;
 			qdata[6] = qpsec;
 			qdata[7] = qrsec;
-			GDLogger.log( Dhsname, 0);
-			GDLogger.log( Ddpath, 0 );
-			dbadded[i] = thread.runDriveQuery( qdata ); // still need  to write this  function
+			_logger.logstream << "Drive full host/path: " << Dhsname << "/" << Ddpath;
+			_logger.log( 0 );
+			dbadded[i] = db.runDriveQuery( qdata );
 		}
 		else {
-			GDLogger.log( "Drive datastream rejected by server.", 3 );
+			_logger.logstream << "Drive datastream rejected by server.";
+			_logger.log( 3 );
 			validated[i] = false;
 		}
 	}
 	bool valid = true;
 	bool dbadd = true;
-	GDLogger.log( "Validating that operation performed successfully.", 1 );
+	_logger.logstream << "Validating that operation performed successfully.";
+	_logger.log( 1 );
 	for( int i = 0; i < Ddnum; i++ ) {
 		if( !validated[i] ) {
 			valid = false;
@@ -143,9 +147,11 @@ bool ddrive::readDriveData( const vector<int> &data1 ) {
 	if( dbadd && valid ) {
 		return true;
 	}
+	return false;
 }
 
 int ddrive::readSpoolNumber( const int &snfd, const int &snsd ) {
+	//logger _logger;
 	char spoolchar[2]; // going to char because atoi accepts char*
 	spoolchar[0] = snfd;
 	spoolchar[1] = snsd;
@@ -154,6 +160,7 @@ int ddrive::readSpoolNumber( const int &snfd, const int &snsd ) {
 }
 
 int ddrive::read3DigitVals( const int &fd, const int &sd, const int &td ) {
+	//logger _logger;
 	char fillchar[3];// converting int to char because atoi only accepts char*
 	fillchar[0] = fd;
 	fillchar[1] = sd;
@@ -163,6 +170,7 @@ int ddrive::read3DigitVals( const int &fd, const int &sd, const int &td ) {
 }
 
 std::string ddrive::readDHState( const int &dhc ) {
+	//logger _logger;
 	switch( dhc ) {
 		case 0:
 			return "Failed";
@@ -180,9 +188,11 @@ std::string ddrive::readDHState( const int &dhc ) {
 			return "ERR";
 			break;
 	}
+	return "ERR";
 }
 
 std::string ddrive::readSpoolState( const int &sval ) {
+	//logger _logger;
 	switch( sval ) {
 		case 0:
 			return "OFF";
@@ -203,5 +213,6 @@ std::string ddrive::readSpoolState( const int &sval ) {
 			return "ERR";
 			break;
 	}
+	return "ERR";
 }
-
+#undef _logger

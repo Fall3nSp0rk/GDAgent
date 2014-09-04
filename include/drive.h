@@ -4,8 +4,8 @@ using std::vector;
 class ddrive {
 	public:
 		static std::vector<int> DEFAULT_VECTOR;
-		ddrive( const int &dnum = 36, const std::string &hsname = "r00.AMS", const vector<int> &ddata = DEFAULT_VECTOR ); 
-		bool readDriveData( const vector<int> &data1 );
+		ddrive( int dnum = 36, std::string hsname = "r00.AMS", vector<int> ddata = DEFAULT_VECTOR ); 
+		bool readDriveData( const vector<int> &data1, dbase db );
 		vector<std::string> qdata;
 	protected:
 		int Ddnum;
@@ -19,7 +19,6 @@ class ddrive {
 		std::string Dspstate; // spool status, e.g. OFF, RW, NO/ERROR, RO, or NO
 		
 	private:
-		
 		int readSpoolNumber( const int &snfd, const int &snsd );
 		int read3DigitVals( const int &fd,  const int &sd, const int &tdtd );
 		std::string readDHState( const int &dhc );
@@ -30,7 +29,6 @@ class ddrive {
 		vector<int> Ddcode; // the vector that holds each drives data
 };
 
-extern ddrive dd;
 
 
 #endif

@@ -6,8 +6,9 @@
 class logger {
 	public:
 		logger();
-		void log ( const std::string &text, int mlvl );
+		void log ( int mlvl );
 		int Llport;
+		std::stringstream logstream;
 	private:
 		void errException( const int &ecode, const int &line, const std::string &file );
 		void readCfg();
@@ -22,6 +23,5 @@ class logger {
 		pid_t Lpid;
 		int Llvl;
 };
-extern std::ofstream lmsg;
-extern logger GDLogger;
+extern logger mlog;
 #endif

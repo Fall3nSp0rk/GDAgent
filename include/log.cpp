@@ -36,7 +36,8 @@ void logger::readCfg() {
 	}
 	else {
 		Lfile = "/var/log/GDlog";
-		log( "No Logfile specified in cfg file. Using default.", 1 );
+		/*logstream << "No Logfile specified in cfg file. Using default of " << Lfile << ".";
+		log( 1 );*/
 	}
 	if( conf.keyExists( "DebugLevel" ) ) {
 		int debuglevel = conf.getValueOfKey<int>( "DebugLevel" );
@@ -45,40 +46,50 @@ void logger::readCfg() {
 		std::string dd = d.str();
 		char dl = dd[0];
 		int dlvl = ccInt( dl );
+		/*logstream << "Logging level set to [";
 		switch( dlvl ) {
 			case 0:
-				logger::log( "Logging level set to [DEBUG] (0) from config file.", 1 );
+				logstream << "DEBUG] (0) from config file.";
+				logger::log( 1 );
 				break;
 			case 1:
-				logger::log( "Logging level set to [INFO] (1) from config file.", 1 );
+				logstream << "INFO] (1) from config file.";
+				logger::log( 1 );
 				break;
 			case 2:
-				logger::log( "Logging level set to [WARN] (2) from config file.", 1 );
+				logstream << "WARN] (2) from config file.";
+				logger::log( 1 );
 				break;
 			case 3:
-				logger::log( "Logging level set to [ERR] (3) from config file.", 1 );
+				logstream << "ERR] (3) from config file.";
+				logger::log( 1 );
 				break;
 			case 4:
-				logger::log( "Logging level set to [FATAL] (4) from config file.", 1 );
+				logstream << "FATAL] (4) from config file.";
+				logger::log( 1 );
 				break;
 			case 5:
-				logger::log( "Logging level set to [EXCEPTION] (5) from config file.", 1);
+				logstream << "EXCEPTION] (5) from config file.";
+				logger::log( 1 );
 				break;
 			default:
-				log( "Logging level set to  [ALL] (0) due to invalid config file entry.", 2 );
+				logstream << "ALL] (0) due to invalid config file entry.";
+				log( 2 );
 				break;
-		}
+		}*/
 		Llvl = dlvl;
 	}
 	if( conf.keyExists( "ListenPort" ) ) {
 		Llport = conf.getValueOfKey<int>( "ListenPort" );
-		log( "Listen port Read from cfg file.", 1 );
+		/*logstream << "Listen port of " << Llport << " read from config file.";
+		log( 1 );*/
 
 		
 	}
 	else {
 		Llport = 8000;
-		log( "No value found for listen port. Using default of 8000.", 1 );
+		/*logstream << "No entry found for listen port. Using default value of " << Llport << ".";
+		log( 1 ); */
 	}
 }
 
@@ -104,51 +115,51 @@ bool logger::writeLog( const std::string &message ) {
 	return true;
 }
 
-void logger::log( const std::string &text, int mlvl ) {
+void logger::log( int mlvl ) {
 	if( mlvl >= Llvl ){
-		std::stringstream logtext;
-		std::string logoutput;
+		std::string lin = logstream.str();
+		logstream.str("");
 		switch( mlvl ) {
 			case 0:
-				logtext<< "[DEBUG] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream << "[DEBUG] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				break;
 			case 1:
-				logtext<< "[INFO] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream<< "[INFO] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				break;
 			case 2:
-				logtext<< "[WARN] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream<< "[WARN] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				break;
 			case 3:
-				logtext<< "[ERR] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream<< "[ERR] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				break;
 			case 4:
-				logtext<< "[CRITICAL] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream<< "[CRITICAL] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				break;
 			case 5:
-				logtext<< "[EXCEPTION] " << text << std::endl;
-				logoutput = logtext.str();
-				logtext.str("");
-				writeLog( logoutput );
+				logstream<< "[EXCEPTION] " << lin << std::endl;
+				lin = logstream.str();
+				logstream.str("");
+				writeLog( lin );
 			default:
-				logtext<< "[GENERAL] " << text << std::endl;
-				logoutput = logtext.str();
-				writeLog( logoutput );
-				logtext.str("");
+				logstream<< "[GENERAL] " << lin << std::endl;
+				lin = logstream.str();
+				writeLog( lin );
+				logstream.str("");
 				writeLog( "[ERROR] Invalid identifier given to logger.\n" );
 				break;
 		}
@@ -156,4 +167,4 @@ void logger::log( const std::string &text, int mlvl ) {
 	}
 	
 }
-logger GDLogger;
+logger mlog;
