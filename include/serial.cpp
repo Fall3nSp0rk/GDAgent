@@ -16,7 +16,8 @@
 #include<exception>
 #include "mmapper.h"
 #include "drive.h"
-#define _logger mlog
+#include "globals.h"
+#define _logger slog
 using std::vector;
 const int bsize = 1024;
 static const int valstrucpos[] = { 0, 1, 5, 15, 16, 36, 37, 38, 39, 577, 578, 579, 580, 581, 582, 583, 584, 585, 586 };
@@ -31,7 +32,7 @@ const int Sdlen = 576;
 const int Smlen = 18;
 const int Sblen = 1024;
 serial::serial( ){ // overrides default constructor
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	try {
 		_logger.logstream << "serial object initialized.";
 		_logger.log( 1 );
@@ -56,7 +57,7 @@ serial::serial( ){ // overrides default constructor
 	}
 }
 void serial::readDVec( std::vector<int> &vec ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readDVec() called.";
 	_logger.log( 0 );
 	for( int i = 0; i > Sdlen; i++ ) {
@@ -67,7 +68,7 @@ void serial::readDVec( std::vector<int> &vec ) {
 	_logger.log( 0 );
 }
 void serial::readBits( const std::vector<int> &buff ){
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	try{
 		_logger.logstream << "Called readBits";
 		_logger.log( 0 );
@@ -116,7 +117,7 @@ void serial::readBits( const std::vector<int> &buff ){
 
 
 bool serial::validateHost( const std::string &fstype, const int &fsid, const std::string &fsite, const std::string &ftld ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	bool passedUIDValidation = false; // as each segment is validated, these flags are set to true.
 	bool passedSiteTLDValidation = false;
 	bool passedTypeTLDValidation = false;
@@ -283,7 +284,7 @@ bool serial::validateHost( const std::string &fstype, const int &fsid, const std
 }
 
 bool serial::deSerialize( ) { // wrapper function that calls deserialization functioons, then validates, and returns true if successful, false if not.
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "deSerialize() called.";
 	_logger.log( 0 );
 	/*Sstype = mapp.getKeyFromMap( Ssbits[0], Ssbits[1], 1 ); 
@@ -309,7 +310,7 @@ bool serial::deSerialize( ) { // wrapper function that calls deserialization fun
 // function definitions for serial class follow here
 
 void serial::readMac( const vector<int> &mbits ) { // reads the 18 digit decimal-encoded mac address
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readMac() called.";
 	_logger.log( 0 );
 	std::ostringstream strm;
@@ -339,7 +340,7 @@ void serial::readMac( const vector<int> &mbits ) { // reads the 18 digit decimal
 }
 
 void serial::readGC( const vector<int> &fsbits ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readGC() called."; // reads the GC status bit (sbit[2]) and translates it to human
 	_logger.log( 0 );
 
@@ -367,7 +368,7 @@ void serial::readGC( const vector<int> &fsbits ) {
 }
 
 void serial::readDNum( const vector<int> &sbits ) { // read the number of drives from sbit[4]
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readDNum() called.";
 	_logger.log( 0 );
 	switch( sbits[4] ) {
@@ -400,7 +401,7 @@ void serial::readDNum( const vector<int> &sbits ) { // read the number of drives
 }
 
 std::string serial::readType( const std::string &fstype ) { // takes the server type and determines the next part of its hostname
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readType() called.";
 	_logger.log( 0 );
 	if ( fstype == "r" || fstype == "h" || fstype == "t" || fstype == "serv" ) {
@@ -424,7 +425,7 @@ std::string serial::readType( const std::string &fstype ) { // takes the server 
 
 
 std::string serial::readSType( const vector<int> &sbits ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readSType() called.";
 	_logger.log( 0 );
 	int stcode = sbits[0];
@@ -474,7 +475,7 @@ std::string serial::readSType( const vector<int> &sbits ) {
 
 
 void serial::readAType( const vector<int> &sbits ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream <<  "Determined asset-type to be 'server'.";
 	_logger.log( 1 );
 	Satype = "server";
@@ -483,7 +484,7 @@ void serial::readAType( const vector<int> &sbits ) {
 }
 
 void serial::readRecover( const int &rcode ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readRecover() called.";
 	_logger.log( 0 );
 	switch( rcode ) { // reads whether or not the server is currently recovering.
@@ -497,8 +498,11 @@ void serial::readRecover( const int &rcode ) {
 			Srstate = "Infected";
 			break;
 		case 3:
-			Srstate = "Defunct";
+			Srstate = "Requires Attention";
 			break;
+		case 4:
+			Srstate = "Defunct";
+		
 		default:
 			_logger.logstream << "Error on line 243: serial.cpp: Invalid data (?) received for Srstate.";
 			_logger.log( 2 );
@@ -509,7 +513,7 @@ void serial::readRecover( const int &rcode ) {
 }
 
 std::string serial::readID(  const vector<unsigned long int> &hbits, const std::string &fstype ) { 
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readID() called.";
 	_logger.log( 0 );
 	std::stringstream result;
@@ -550,7 +554,7 @@ std::string serial::readID(  const vector<unsigned long int> &hbits, const std::
 
 // Reads the site identifier code
 std::string serial::readSite( const vector<int> &fsbits ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readSite() called.";
 	_logger.log( 0 );
 	// reads the only two numbers we care about out of the server information bits
@@ -592,7 +596,7 @@ std::string serial::readSite( const vector<int> &fsbits ) {
 }
 
 std::string serial::getTLD( const std::string &fsite ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "getTLD() called.";
 	_logger.log( 0 ); // if site is not in the GNsites list, it's gf, if it is, GN
 	vector<std::string> gnsites{ "AMS", "AMS1", "AMS2", "AMS3", "DCA", "DCA1", "DCA2", "DCA3", "LAX", "HKG", "AUS2" };
@@ -609,7 +613,7 @@ std::string serial::getTLD( const std::string &fsite ) {
 }
 
 void serial::getHostName( const vector<unsigned long int> &fhbits ) { // Assembles various bits into a coherent hostname
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "getHostName() called.";
 	_logger.log( 0 );
 	std::string Stld = serial::getTLD( Ssite );

@@ -5,13 +5,12 @@
 #define __LOG_H
 class logger {
 	public:
-		logger();
+		logger( int ll = 0, std::string lf = "/var/log/glog" );
 		void log ( int mlvl );
 		int Llport;
 		std::stringstream logstream;
 	private:
 		void errException( const int &ecode, const int &line, const std::string &file );
-		void readCfg();
 		void setLogLevel( int llvl );
 		pid_t getPID();
 		unsigned long getThread();
@@ -23,5 +22,4 @@ class logger {
 		pid_t Lpid;
 		int Llvl;
 };
-extern logger mlog;
 #endif

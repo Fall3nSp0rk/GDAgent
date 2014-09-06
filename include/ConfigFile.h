@@ -2,6 +2,8 @@
 // header file for ConfigFile.cpp
 // from http://www.dreamincode.net/forums/topic/183191-create-a-simple-configuration-file-parser/
 
+#ifndef __CONFIGFILE_H
+#define __CONFIGFILE_H
 #include<iostream>
 #include<string>
 #include<sstream>
@@ -128,3 +130,4 @@ template <typename ValueType> ValueType cfg::getValueOfKey( const std::string &k
 	}
 	return Convert::string_to_T<ValueType> ( contents.find( key ) -> second );
 }
+#endif

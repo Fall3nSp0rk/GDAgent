@@ -18,13 +18,14 @@
 #include "dbase.h"
 #include "mmapper.h"
 #include "drive.h"
-#define _logger mlog
+#include "globals.h"
+#define _logger ddlog
 using std::vector;
 const int maxlen = 576; // Maximum size of the ddrive bit vector
 const int vdlen = 16; // constant value. Drive descriptors should always be 16 bytes.
 
 ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "ddrive object initialized.";
 	_logger.log( 0 );
 	_logger.logstream << "Setting Default Values and reading data into object.";
@@ -54,7 +55,7 @@ ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata ) {
 
 bool ddrive::readDriveData( const vector<int> &data1, dbase db ) {
 	mmapper::mmapper mapp;
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readDriveData() called.";
 	_logger.log( 0 );
 	int SequenceNumber = 0;
@@ -151,7 +152,7 @@ bool ddrive::readDriveData( const vector<int> &data1, dbase db ) {
 }
 
 int ddrive::readSpoolNumber( const int &snfd, const int &snsd ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	char spoolchar[2]; // going to char because atoi accepts char*
 	spoolchar[0] = snfd;
 	spoolchar[1] = snsd;
@@ -160,7 +161,7 @@ int ddrive::readSpoolNumber( const int &snfd, const int &snsd ) {
 }
 
 int ddrive::read3DigitVals( const int &fd, const int &sd, const int &td ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	char fillchar[3];// converting int to char because atoi only accepts char*
 	fillchar[0] = fd;
 	fillchar[1] = sd;
@@ -170,7 +171,7 @@ int ddrive::read3DigitVals( const int &fd, const int &sd, const int &td ) {
 }
 
 std::string ddrive::readDHState( const int &dhc ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	switch( dhc ) {
 		case 0:
 			return "Failed";
@@ -192,7 +193,7 @@ std::string ddrive::readDHState( const int &dhc ) {
 }
 
 std::string ddrive::readSpoolState( const int &sval ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	switch( sval ) {
 		case 0:
 			return "OFF";

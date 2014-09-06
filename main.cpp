@@ -31,6 +31,7 @@
 #include<exception>
 #include "include/drive.h"
 #include "include/mmapper.h"
+#include "include/globals.h"
 using boost::asio::ip::tcp;
 #define _logger mlog
 const int max_length = 1024;
@@ -38,6 +39,7 @@ const int max_length = 1024;
 typedef boost::shared_ptr<tcp::socket> socket_ptr;
 
 bool handle_data( std::vector<int>& buffer_data ) { // data handling happens here
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "handle_data() called.";
 	_logger.log( 0 );
 	try {
@@ -64,7 +66,7 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens her
 			ddrive dd( ddnum, dshname, dbuff );
 			thread.getQueryData( ser.Srstate, ser.Sstype, ser.Ssite, ser.Shname, ser.Satype, ser.Sservices, ser.Sanum, ser.Sshname, ser.Smac, ser.Svarfill, ser.Sdnum ); // handing all the data off to the database module.
 			thread.runQuery(); // runs all the queries necessary to update or insert
-			dd.readDriveData( dbuff, thread );
+			// dd.readDriveData( dbuff, thread ); commenting this out until mutex locks and thread queuing is implemented
 			
 		}
 		if( !ec ) {
@@ -94,6 +96,7 @@ std::string timestamp() { // needs to get moved to util.h as an inline
 }
 
 std::vector<int> sanData( char bdata[max_length] ) { // sanitizes and trims received data to prevent exceptions and buffer overflows
+	logger _logger( glob.g_ll, glob.g_logfile );
 	std::stringstream ss( bdata );
 	std::string s2 = ss.str();
 	ss.str("");
@@ -130,6 +133,7 @@ std::vector<int> sanData( char bdata[max_length] ) { // sanitizes and trims rece
 	return odata; // return
 }
 bool valSerialData( const vector<int> &vdata ) { // validates that all data conforms to structures set out in inflow doc
+	logger _logger( glob.g_ll, glob.g_logfile );
 	if( (vdata[0] == 0 && vdata[1] == 0 )
 			&& ( vdata[5] == 1 && vdata[15] == 0)
 			&& ( vdata[16] == 1 && vdata[35] == 1 )/*
@@ -166,6 +170,7 @@ bool valSerialData( const vector<int> &vdata ) { // validates that all data conf
 }
 
 void session( socket_ptr sock ) { // the actual TCP session starts here
+	logger _logger( glob.g_ll, glob.g_logfile );
 	// boost::this_thread::disable_interruption di;
 	bool inproc = false; // this will be set to true once input has been sucessfully processed.
 	try {
@@ -302,14 +307,14 @@ bool seedDaemon() {
 
 
 int main( ) {
-	logger mlog;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	boost::system::error_code er;
 	std::string ver = "0.5 Alpha";
 	mlog.logstream << "GDAgent version " << ver << " Initializing. Reading configuration from config file";
 	mlog.log( 1 );
 	mlog.logstream << "Daemonizing....";
 	mlog.log( 1 );
-	//seedDaemon();
+	seedDaemon();
 	if( !er ) { // if EC is still empty, alls well
 		mlog.logstream << "Daemonizing successful.";
 		mlog.log( 1 );
@@ -323,7 +328,7 @@ int main( ) {
 		using boost::asio::ip::tcp; 
 		boost::asio::io_service io_service;
 		using namespace std; // for atoi
-		server( io_service, mlog.Llport ); //  listen porrt will eventually be read from config file, which reads as char* array.
+		server( io_service, glob.g_lport ); //  listen port read from config file.
 	}
 	catch( std::exception& e ) {
 		mlog.logstream << "Exception: " << e.what() << "\n";

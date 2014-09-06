@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include "log.h"
 #include "mmapper.h"
-#define _logger mlog
+#include "globals.h"
+#define _logger mmlog
 mmapper::mmapper() {
 	createDriveLetterMap();
 	createSiteMap();
@@ -20,7 +21,7 @@ std::map<DLpair, std::string> mmapper::Ddlabel;
 std::map<TPCodeUidPair, std::string> mmapper::cachedData;
 std::map<RgCodeUidPair, std::string> mmapper::siteMap;
 std::string mmapper::getKeyFromMap( const int &key1, const int &key2, const int &mid ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	switch( mid ) {
 		case 1: {
 			_logger.logstream << "Retrieving key values for Server Type.";
@@ -77,7 +78,7 @@ std::string mmapper::getKeyFromMap( const int &key1, const int &key2, const int 
 	}
 }
 void mmapper::createDriveLetterMap() {
-		//logger _logger;
+		logger _logger( glob.g_ll, glob.g_logfile );
 		_logger.logstream << "createDriveLetterMap() called.";
 		_logger.log( 0 );
 		_logger.logstream << "Filling drive port:path map.";
@@ -123,7 +124,7 @@ void mmapper::createDriveLetterMap() {
 }
 
 void mmapper::createSiteMap() {
-		//logger _logger;
+		logger _logger( glob.g_ll, glob.g_logfile );
 		_logger.logstream << "Loading Site Map.";
 		_logger.log( 0 );
 	if ( siteMap.empty() ) {
@@ -152,7 +153,7 @@ void mmapper::createSiteMap() {
 	}
 }
 void mmapper::createTypeMap() {
-		//logger _logger;
+		logger _logger( glob.g_ll, glob.g_logfile );
 		_logger.logstream << "Loading Type Map.";
 		_logger.log( 0 );
 	try {

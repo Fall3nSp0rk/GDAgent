@@ -10,10 +10,11 @@
 #include<iomanip>
 #include"dbase.h"
 #include"log.h"
-#define _logger mlog
+#include "globals.h"
+#define _logger dlog
 //#include"serial.h"
 bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	bool ex = checkExists( qvec[0], "gd_drives", "host_shortname", "drive_label", qvec[1]);
 	std::stringstream qqquery;
 	if( ex ) {
@@ -53,7 +54,7 @@ bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 
 
 void dbase::runQuery() {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "RunQuery() called.";
 	_logger.log( 0 );
 	bool ex = checkExists( inval[1], "gd_servers", "hostname", "0", "0" );
@@ -67,7 +68,7 @@ void dbase::runQuery() {
 	_logger.log( 0 );
 }
 bool dbase::checkExists( const std::string &data, const std::string &table, const std::string &field, const std::string &f2, const std::string &d2 ) { // check if the received data matches anything already in the database
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "checkExists() called.";
 	_logger.log( 0 );
 	_logger.logstream << "Checking if host already in Database...";
@@ -113,7 +114,7 @@ bool dbase::checkExists( const std::string &data, const std::string &table, cons
 }
 
 void dbase::updateServer() {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	std::stringstream uss;
 	uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << 0 << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
 	std::string upstr = uss.str();
@@ -123,7 +124,7 @@ void dbase::updateServer() {
 }
 
 void dbase::update( const std::string &qquery ) { // update the selected entry in the database
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "update() called.";
 	_logger.log( 0 );
 	_logger.logstream << "Updating database entry.";
@@ -150,7 +151,7 @@ void dbase::update( const std::string &qquery ) { // update the selected entry i
 }
 
 std::string dbase::getLocFromSite( const std::string &site ) { // use the site that is transmitted to determine what the region is
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "getLocFromSite() called.";
 	_logger.log( 0 );
 	mysqlpp::Connection conn( false );
@@ -193,7 +194,7 @@ std::string dbase::getLocFromSite( const std::string &site ) { // use the site t
 }
 
 void dbase::inServer() {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	std::stringstream iss;
 	iss<< "INSERT INTO `" << dbname << "`.`gd_servers` VALUES( ";
 	for( int i = 0; i < 13; i++ ) {
@@ -207,7 +208,7 @@ void dbase::inServer() {
 }
 
 void dbase::insert( const std::string &qstring ) { // insert server info into the mysql database (only if not already present)
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "insert() called.";
 	_logger.log( 0 );
 	mysqlpp::Connection conn( false );
@@ -232,7 +233,7 @@ void dbase::insert( const std::string &qstring ) { // insert server info into th
 }
 
 bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshname, const std::string &Fmac, const int &vfill, const int &dnum ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "getQueryData() called."; // takes all the deserialized data from the serial class and sorts them into containers in preparation of db injection
 	_logger.log( 0 );
 	/* std::string Frstate = buffer.giveStrVal( buffer.Srstate ); // recovery state
@@ -291,14 +292,14 @@ bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype,
 }
 
 void dbase::storeQueryData( const std::string &fsval, const int &posid ) {
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "storeQueryData() called.";
 	_logger.log( 0 );
 	inval[posid] = fsval;
 }
 
 dbase::dbase() { // overrides default constructor for dbase class
-	//logger _logger;
+	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "Initializing Database Module.";
 	_logger.log( 1 );
 	_logger.logstream << "dbase() called.";
