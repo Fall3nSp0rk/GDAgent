@@ -354,6 +354,9 @@ void serial::readGC( const vector<int> &fsbits ) {
 		case 2:
 			Sservices = "Service Error";
 			break;
+		case 3:
+			Sservices = "Critical Error";
+			break;
 		default:
 			Sservices = "Err";
 			_logger.logstream << "Error on line 370: serial.cp: Invalid value received for Sservices: " << fsbits[2];

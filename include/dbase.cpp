@@ -116,7 +116,7 @@ bool dbase::checkExists( const std::string &data, const std::string &table, cons
 void dbase::updateServer() {
 	logger _logger( glob.g_ll, glob.g_logfile );
 	std::stringstream uss;
-	uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << 0 << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
+	uss<< " UPDATE `" << dbname << "`.`gd_servers` SET asset_type=" << mysqlpp::quote_only << inval[0] << ", mac_addr=" << mysqlpp::quote_only << inval[7] <<  ", recover_status=" << mysqlpp::quote_only << inval[10] << ", gc_status=" << mysqlpp::quote_only << inval[11] << ", var_fill=" << mysqlpp::quote_only << 0 << ", open_ticket=" << mysqlpp::quote_only << "0" << ", last_report = NOW() WHERE hostname = " << mysqlpp::quote_only << inval[1] << ";";
 	std::string upstr = uss.str();
 	_logger.logstream << "Calling SQL Query '" << upstr << "'.";
 	_logger.log( 1 );

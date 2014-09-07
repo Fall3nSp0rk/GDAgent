@@ -1,4 +1,12 @@
-v0.6 Alpha
+v0.6.86.7 Alpha
+Build 06867
+- Changed:  server database update function will now also update mac_addr
+field.
+- Added: more clarification to gc status code 2-4 by DCron script.
+- Added: 'Critical Error' state (code 3) for gc state.
+- Changed: Tweaked DCron script to log when an error occurs with DCron.
+
+v0.6.86.6 Alpha
 Build 06866
 - New: Started Writing SQL statements for Rafael's frontend to parse DB.
 - Fixed: issue where 3ware-based r-servers were not correctly reporting

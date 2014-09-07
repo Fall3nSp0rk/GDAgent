@@ -6,6 +6,8 @@
 #include <exception>
 #include <algorithm>
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/bind.hpp>
 #include <iomanip>
 #include <stdlib.h>
 #include "log.h"
