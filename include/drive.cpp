@@ -14,25 +14,30 @@
 #include <iterator>
 #include <exception>
 #include <stdlib.h>
+#include <boost/bind.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/thread.hpp>
 #include "util.h"
 #include "dbase.h"
 #include "mmapper.h"
 #include "drive.h"
 #include "globals.h"
+#include "pool.h"
 #define _logger ddlog
 using std::vector;
 const int maxlen = 576; // Maximum size of the ddrive bit vector
 const int vdlen = 16; // constant value. Drive descriptors should always be 16 bytes.
 
-ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata ) {
+ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata, const std::string &fsite ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "ddrive object initialized.";
 	_logger.log( 0 );
 	_logger.logstream << "Setting Default Values and reading data into object.";
 	_logger.log( 0 );
+	Dsite = fsite;
 	Ddnum = dnum;
 	Ddvblen = ddata.size();
-	qdata.resize( 8 );
+	qdata.resize( 9 );
 	Dhsname = hsname;
 	Dspnum = 0;
 	Dspfill = 0;
@@ -123,9 +128,10 @@ bool ddrive::readDriveData( const vector<int> &data1, dbase db ) {
 			qdata[5] = Dspstate;
 			qdata[6] = qpsec;
 			qdata[7] = qrsec;
+			qdata[8] = Dsite;
 			_logger.logstream << "Drive full host/path: " << Dhsname << "/" << Ddpath;
 			_logger.log( 0 );
-			dbadded[i] = db.runDriveQuery( qdata );
+			dbpool.run_task( boost::bind( ttask::dbdrivetask, qdata ) );
 		}
 		else {
 			_logger.logstream << "Drive datastream rejected by server.";

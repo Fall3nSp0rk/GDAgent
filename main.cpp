@@ -5,33 +5,35 @@
 // http://www.boost.org/doc/libs/1_52_0/doc/html/boost_asio/example/echo/blocking_tcp_echo_server.cpp
 //
 //lot of includes here....
-#include<cstdlib>
-#include<iostream>
-#include<boost/bind.hpp>
-#include<boost/smart_ptr.hpp>
+#include <cstdlib>
+#include <iostream>
+#include <boost/bind.hpp>
+#include <boost/smart_ptr.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/asio/write.hpp>
-#include<boost/thread.hpp>
-#include"include/serial.h"
-#include"include/dbase.h"
-#include<syslog.h>
-#include<sys/types.h>
-#include<stdio.h>
-#include<fcntl.h>
-#include<errno.h>
-#include<unistd.h>
-#include<string.h>
-#include<ctime>
-#include"include/log.h"
-#include"include/util.h"
-#include<algorithm>
-#include<exception>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include "include/serial.h"
+#include "include/dbase.h"
+#include <syslog.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <ctime>
+#include "include/log.h"
+#include "include/util.h"
+#include <algorithm>
+#include <exception>
 #include "include/drive.h"
 #include "include/mmapper.h"
 #include "include/globals.h"
+#include "include/pool.h"
 using boost::asio::ip::tcp;
 #define _logger mlog
 const int max_length = 1024;
@@ -47,7 +49,6 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens her
 		boost::system::error_code ec; // declare an error object to collect exceptions
 		ser.readBits( buffer_data ); //read from buffer into saod object
 		std::vector<int> dbuff;
-		dbase thread;
 		if( buffer_data.size() >=616 ) {
 			//ser.readDVec( dbuff );
 			for( int i = 0; i < ser.Sdbits.size(); i++ ) {
@@ -64,9 +65,7 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens her
 			int ddnum = ser.Sdnum;
 			std::string dshname = ser.Sshname;
 			ddrive dd( ddnum, dshname, dbuff );
-			thread.getQueryData( ser.Srstate, ser.Sstype, ser.Ssite, ser.Shname, ser.Satype, ser.Sservices, ser.Sanum, ser.Sshname, ser.Smac, ser.Svarfill, ser.Sdnum ); // handing all the data off to the database module.
-			thread.runQuery(); // runs all the queries necessary to update or insert
-			// dd.readDriveData( dbuff, thread ); commenting this out until mutex locks and thread queuing is implemented
+			dbpool.run_task( boost::bind( ttask::dbstask, ser.Sdbvec ) );
 			
 		}
 		if( !ec ) {
@@ -134,9 +133,11 @@ std::vector<int> sanData( char bdata[max_length] ) { // sanitizes and trims rece
 }
 bool valSerialData( const vector<int> &vdata ) { // validates that all data conforms to structures set out in inflow doc
 	logger _logger( glob.g_ll, glob.g_logfile );
+	_logger.logstream << "0p:(0) " << vdata[0] <<" 5p:(1) " << vdata[5] << " 15p:(0) " << vdata[15];
+	_logger.log( 0 );
 	if( (vdata[0] == 0 && vdata[1] == 0 )
 			&& ( vdata[5] == 1 && vdata[15] == 0)
-			&& ( vdata[16] == 1 && vdata[35] == 1 )/*
+			/*&& ( vdata[16] == 1 && vdata[35] == 1 )
 			&& ( vdata[36] == 9 && vdata[37] == 9 )
 			&& ( vdata[39] == 9 && vdata[40] == 0 )
 			&& ( vdata[56] == 0 && vdata[72] == 0 )
@@ -314,7 +315,7 @@ int main( ) {
 	mlog.log( 1 );
 	mlog.logstream << "Daemonizing....";
 	mlog.log( 1 );
-	seedDaemon();
+	//seedDaemon();
 	if( !er ) { // if EC is still empty, alls well
 		mlog.logstream << "Daemonizing successful.";
 		mlog.log( 1 );

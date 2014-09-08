@@ -57,23 +57,27 @@ bool logger::writeLog( const std::string &message ) {
 void logger::log( int mlvl ) {
 	if( mlvl >= Llvl ){
 		std::string lin = logstream.str();
+		logstream << std::endl;
 		logstream.str("");
 		switch( mlvl ) {
 			case 0:
 				logstream << "[DEBUG] " << lin;
 				lin = logstream.str();
 				writeLog( lin );
+				logstream << std::endl;
 				logstream.str("");
 				break;
 			case 1:
 				logstream<< "[INFO] " << lin;
 				lin = logstream.str();
 				writeLog( lin );
+				logstream << std::endl;
 				logstream.str("");
 				break;
 			case 2:
 				logstream<< "[WARN] " << lin;
 				lin = logstream.str();
+				logstream << std::endl;
 				writeLog( lin );
 				logstream.str("");
 				break;
@@ -81,22 +85,26 @@ void logger::log( int mlvl ) {
 				logstream<< "[ERR] " << lin;
 				lin = logstream.str();
 				writeLog( lin );
+				logstream << std::endl;
 				logstream.str("");
 				break;
 			case 4:
 				logstream<< "[CRITICAL] " << lin;
 				lin = logstream.str();
 				writeLog( lin );
+				logstream << std::endl;
 				logstream.str("");
 				break;
 			case 5:
 				logstream<< "[EXCEPTION] " << lin;
 				lin = logstream.str();
+				logstream << std::endl;
 				logstream.str("");
 				writeLog( lin );
 			default:
 				logstream<< "[GENERAL] " << lin;
 				lin = logstream.str();
+				logstream << std::endl;
 				writeLog( lin );
 				logstream.str("");
 				writeLog( "[ERROR] Invalid identifier given to logger.\n" );

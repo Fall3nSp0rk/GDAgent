@@ -25,6 +25,7 @@ class serial {
 		int Sdnum;
 		bool Svalidated;
 		vector<int> Sdbits;
+		vector<std::string> Sdbvec;
 	private:
 		friend class dbase;
 		std::string  readID( const vector<unsigned long int> &hbits, const std::string &fstype ); // definition written
@@ -39,6 +40,7 @@ class serial {
 		void readMac( const vector<int> &mbits ); 
 		void readRecover( const int &rcode ); // definition written
 		std::string getTLD( const std::string &fsite ); // definition written
+		void wrapData();
 		bool validateHost( const std::string &fstype, const int &fsid, const std::string &fsite, const std::string &ftld );
 		vector<unsigned long int> Shbits;
 		vector<int> Ssbits;

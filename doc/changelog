@@ -1,3 +1,9 @@
+v0.6.86.8 Alpha
+Build 06867
+- Added: Pool class for utilizing thread pools with work queues.
+- Added/Changed: Changed db module to run exclusively in a thread pool as
+opposed to each thread making their own connections.
+
 v0.6.86.7 Alpha
 Build 06867
 - Changed:  server database update function will now also update mac_addr

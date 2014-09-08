@@ -12,8 +12,8 @@ class dbase{
 	public:
 		dbase();
 		void runQuery();
-		bool runDriveQuery( const std::vector<std::string> &qvec );
-		bool getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshanme, const std::string &Fmac, const int &vfill, const int &dnum );
+		void runDriveQuery( const std::vector<std::string> &qvec );
+		bool getQueryData( const std::vector<std::string> &fvec );
 	private:
 		void updateServer();
 		void inServer();
@@ -25,5 +25,11 @@ class dbase{
 		void update( const std::string &qquery );
 
 };
+class ttask {
+	public:
+		static void dbdrivetask( const std::vector<std::string> &qq );
+		static void dbstask( const std::vector<std::string> &qq );
+};
+extern ttask tt;
 //extern dbase thread;
 #endif

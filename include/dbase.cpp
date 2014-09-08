@@ -13,7 +13,7 @@
 #include "globals.h"
 #define _logger dlog
 //#include"serial.h"
-bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
+void dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
 	bool ex = checkExists( qvec[0], "gd_drives", "host_shortname", "drive_label", qvec[1]);
 	std::stringstream qqquery;
@@ -30,11 +30,10 @@ bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 		_logger.logstream << "Calling SQL statement '" << fquery << "'.;";
 		_logger.log( 1 );
 		update( fquery );
-		return true;
 	}
 	else {
 		qqquery << "INSERT INTO `" << dbname << "`.`gd_drives` VALUES ( " << mysqlpp::quote_only << "Hard Drive";
-		qqquery << ", " << "'" << qvec[0] << "/" << qvec[1] << "', " << mysqlpp::quote_only << inval[5];
+		qqquery << ", " << "'" << qvec[0] << "/" << qvec[1] << "', " << mysqlpp::quote_only << qvec[8];
 		qqquery << ", " << mysqlpp::quote_only << qvec[0] << ", " << mysqlpp::quote_only << qvec[1];
 		qqquery << ", " << mysqlpp::quote_only << "0";
 		qqquery << ", " << mysqlpp::quote_only << qvec[2];
@@ -48,7 +47,6 @@ bool dbase::runDriveQuery( const std::vector<std::string> &qvec ) {
 		_logger.logstream << "Calling SQL Statement '" << ffquery << "'.";
 		_logger.log( 1 );
 		insert( ffquery );
-		return true;
 	}
 }
 
@@ -232,7 +230,7 @@ void dbase::insert( const std::string &qstring ) { // insert server info into th
 	_logger.log( 0 );
 }
 
-bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype, const std::string &Fsite, const std::string &Fhost, const std::string &Fatype, const std::string &Fsstate, const std::string &Fanum, const std::string &Fshname, const std::string &Fmac, const int &vfill, const int &dnum ) {
+bool dbase::getQueryData( const std::vector<std::string> &fvec ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "getQueryData() called."; // takes all the deserialized data from the serial class and sorts them into containers in preparation of db injection
 	_logger.log( 0 );
@@ -243,44 +241,34 @@ bool dbase::getQueryData( const std::string &Frstate, const std::string &Fstype,
 	std::string Fatype = buffer.giveStrVal( buffer.Satype ); // asset type
 	std::string Fsstate = buffer.giveStrVal( buffer.Sservices ); // service status
 	std::string Fanum = buffer.giveStrVal( buffer.Sanum ); // number of arrays */
-	std::string Fshorthost = Fshname; // host shortname
-	std::string Floc = getLocFromSite( Fsite ); // location, queried from database based on string
+	std::string Floc = getLocFromSite( fvec[2] ); // location, queried from database based on string
 	std::string FOrt = "false"; // true/false value for whether there is an open RT for the server. default is false.
-	std::stringstream ssfill;
-	ssfill << vfill; // /ivar fill percentage
-	std::string Fvfill = ssfill.str();
-	std::stringstream ssdnum;
-	ssdnum <<  dnum; // number of hard drives
-	std::string Fdnum = ssdnum.str();
 	std::string uid= ""; // queried from database, default is 0;
-	if ( Fstype == "r" || Fstype == "h" || Fstype == "t" ) {
+	if ( fvec[1] == "r" || fvec[1] == "h" || fvec[1] == "t" ) {
 		std::stringstream ss;
-		ss << Fstype << mysqlpp::quote << "_server";
+		ss << fvec[1] << mysqlpp::quote << "_server";
 		std::string sstype = ss.str();
 		storeQueryData( sstype, 4 );
 	}
 	else {
-		storeQueryData( Fstype, 4 );
+		storeQueryData( fvec[1], 4 );
 	}
 	int num = 5; // this is  temporary until I write it's hook in the serial class.
-	std::stringstream anum1;
-	anum1 << num;
 	_logger.logstream <<  "Retrieving values for storage in database.";
 	_logger.log( 1 );
-	std::string tanum = anum1.str();
-	storeQueryData( Fatype, 0 );
-	storeQueryData( Fhost, 1 );
-	storeQueryData( Fshorthost, 2 );
+	storeQueryData( fvec[4], 0 );
+	storeQueryData( fvec[3], 1 );
+	storeQueryData( fvec[7], 2 );
 	storeQueryData( uid, 3 );
 	//storeQueryData( Fstype, 4 );
-	storeQueryData( Fsite, 5 );
+	storeQueryData( fvec[2], 5 );
 	storeQueryData( Floc, 6 );
-	storeQueryData( Fmac, 7 );
-	storeQueryData( Fdnum, 8 );
-	storeQueryData( tanum , 9 );
-	storeQueryData( Frstate, 10 );
-	storeQueryData( Fsstate, 11 );
-	storeQueryData( Fvfill, 12 );
+	storeQueryData( fvec[8], 7 );
+	storeQueryData( fvec[10], 8 );
+	storeQueryData( fvec[6] , 9 );
+	storeQueryData( fvec[0], 10 );
+	storeQueryData( fvec[5], 11 );
+	storeQueryData( fvec[9], 12 );
 	storeQueryData( FOrt, 13 );
 	 /* for ( int i = 0; i < 14; i++ ) {
 		std::cout<< inval[i];
@@ -308,4 +296,15 @@ dbase::dbase() { // overrides default constructor for dbase class
 	inval.resize(16);
 	// getQueryData(); // retrieve data to be entered into the database
 }
+
+void ttask::dbdrivetask( const std::vector<std::string> &qq ) {
+	dbase::dbase ddthread;
+	ddthread.runDriveQuery( qq );
+};
+void ttask::dbstask( const std::vector<std::string> &qq ) {
+	dbase::dbase sthread;
+	sthread.getQueryData( qq );
+	sthread.runQuery();
+};
+ttask::ttask tt;
 #undef _logger

@@ -8,15 +8,15 @@
 #include<algorithm>
 #include<map>
 #include "log.h"
-#include "dbase.h"
 #include"serial.h"
 #include<iomanip>
 #include<stdlib.h>
 #include<boost/thread.hpp>
 #include<exception>
+#include "globals.h"
+#include "dbase.h"
 #include "mmapper.h"
 #include "drive.h"
-#include "globals.h"
 #define _logger slog
 using std::vector;
 const int bsize = 1024;
@@ -115,7 +115,28 @@ void serial::readBits( const std::vector<int> &buff ){
 		_logger.log( 0 );
 }
 
-
+void serial::wrapData() {
+	Sdbvec.push_back( Srstate );
+	Sdbvec.push_back( Sstype );
+	Sdbvec.push_back( Ssite );
+	Sdbvec.push_back( Shname );
+	Sdbvec.push_back( Satype );
+	Sdbvec.push_back( Sservices );
+	Sdbvec.push_back( Sanum );
+	Sdbvec.push_back( Sshname );
+	Sdbvec.push_back( Smac );
+	std::stringstream ss;
+	ss << Svarfill;
+	std::string fvfill = ss.str();
+	Sdbvec.push_back( fvfill );
+	ss << std::endl;
+	ss.str("");
+	ss << Sdnum;
+	std::string fdnum = ss.str();
+	Sdbvec.push_back( fdnum );
+	ss << std::endl;
+	ss.str("");
+}
 bool serial::validateHost( const std::string &fstype, const int &fsid, const std::string &fsite, const std::string &ftld ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
 	bool passedUIDValidation = false; // as each segment is validated, these flags are set to true.
@@ -300,6 +321,7 @@ bool serial::deSerialize( ) { // wrapper function that calls deserialization fun
 	_logger.logstream << "deSerialize() completed.";
 	_logger.log( 0 );
 	if( validateHost( Sstype, Ssid, Ssite, Stld ) ) {
+		wrapData();
 		return true;
 	}
 	else {
