@@ -1,17 +1,20 @@
-#include<iostream>
-#include<string>
-#include<iomanip>
-#include<fstream>
-#include<time.h>
-#include<stdio.h>
-#include<map>
-#include<sstream>
-#include"log.h"
-#include"util.h"
-#include<unistd.h>
-#include<boost/lexical_cast.hpp>
-#include<boost/thread.hpp>
-#include<time.h>
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include <fstream>
+#include <time.h>
+#include <boost/asio/io_service.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <stdio.h>
+#include <map>
+#include <sstream>
+#include "log.h"
+#include "util.h"
+#include <unistd.h>
+#include <time.h>
 
 logger::logger( int ll, std::string lf ) {
 	Llvl = ll;
@@ -55,62 +58,41 @@ bool logger::writeLog( const std::string &message ) {
 }
 
 void logger::log( int mlvl ) {
-	if( mlvl >= Llvl ){
-		std::string lin = logstream.str();
-		logstream << std::endl;
-		logstream.str("");
-		switch( mlvl ) {
+	boost::mutex::scoped_lock lock( _logmute ); // lock to this thread, for safety reasons.
+	if( mlvl >= Llvl ){ // check if message level provided is greater than or equal to logging level specified in config file
+		std::string lin = logstream.str(); // flush logstream object to a string so it can be used again
+		logstream.str(""); // ensure it's empty again for next step
+		switch( mlvl ) { // switch to input the proper message level header in front of stream
 			case 0:
-				logstream << "[DEBUG] " << lin;
-				lin = logstream.str();
-				writeLog( lin );
-				logstream << std::endl;
-				logstream.str("");
+				logstream << "[DEBUG] "; 
 				break;
 			case 1:
-				logstream<< "[INFO] " << lin;
-				lin = logstream.str();
-				writeLog( lin );
-				logstream << std::endl;
-				logstream.str("");
+				logstream<< "[INFO] ";
 				break;
 			case 2:
-				logstream<< "[WARN] " << lin;
-				lin = logstream.str();
-				logstream << std::endl;
-				writeLog( lin );
-				logstream.str("");
+				logstream<< "[WARN] ";
 				break;
 			case 3:
-				logstream<< "[ERR] " << lin;
-				lin = logstream.str();
-				writeLog( lin );
-				logstream << std::endl;
-				logstream.str("");
+				logstream<< "[ERROR] ";
 				break;
 			case 4:
-				logstream<< "[CRITICAL] " << lin;
-				lin = logstream.str();
-				writeLog( lin );
-				logstream << std::endl;
-				logstream.str("");
+				logstream<< "[EXCEPTION] ";
 				break;
 			case 5:
-				logstream<< "[EXCEPTION] " << lin;
-				lin = logstream.str();
-				logstream << std::endl;
-				logstream.str("");
-				writeLog( lin );
+				logstream<< "[FATAL] ";
+				break;
 			default:
-				logstream<< "[GENERAL] " << lin;
-				lin = logstream.str();
-				logstream << std::endl;
-				writeLog( lin );
-				logstream.str("");
+				logstream<< "[GENERAL] ";
 				writeLog( "[ERROR] Invalid identifier given to logger.\n" );
 				break;
 		}
+		logstream << lin;
+		lin = logstream.str();
+		writeLog( lin );
+		logstream.str("");
 		
 	}
-	
+	else {
+		logstream.str(""); // if logging level is not greater than logging level specified in config file, just flush buffer and ignore.
+	}
 }

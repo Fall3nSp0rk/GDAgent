@@ -10,6 +10,7 @@ class logger {
 		int Llport;
 		std::stringstream logstream;
 	private:
+		boost::mutex _logmute;
 		void errException( const int &ecode, const int &line, const std::string &file );
 		void setLogLevel( int llvl );
 		pid_t getPID();

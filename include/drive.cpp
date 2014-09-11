@@ -9,14 +9,15 @@
 #include <vector>
 #include <sstream>
 #include <map>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/asio/io_service.hpp>
+#include <boost/bind.hpp>
 #include "log.h"
 #include <iomanip>
 #include <iterator>
 #include <exception>
 #include <stdlib.h>
-#include <boost/bind.hpp>
-#include <boost/asio/io_service.hpp>
-#include <boost/thread.hpp>
 #include "util.h"
 #include "dbase.h"
 #include "mmapper.h"
@@ -58,7 +59,7 @@ ddrive::ddrive( int dnum, std::string hsname, vector<int> ddata, const std::stri
 
 // Destructor for ddrive class
 
-bool ddrive::readDriveData( const vector<int> &data1, dbase db ) {
+bool ddrive::readDriveData( const vector<int> &data1 ) {
 	mmapper::mmapper mapp;
 	logger _logger( glob.g_ll, glob.g_logfile );
 	_logger.logstream << "readDriveData() called.";

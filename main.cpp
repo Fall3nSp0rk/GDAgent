@@ -50,7 +50,7 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens her
 		ser.readBits( buffer_data ); //read from buffer into saod object
 		std::vector<int> dbuff;
 		if( buffer_data.size() >=616 ) {
-			//ser.readDVec( dbuff );
+			//Ser.readDVec( dbuff );
 			for( int i = 0; i < ser.Sdbits.size(); i++ ) {
 				dbuff.push_back( ser.Sdbits[i] );
 			
@@ -66,6 +66,7 @@ bool handle_data( std::vector<int>& buffer_data ) { // data handling happens her
 			std::string dshname = ser.Sshname;
 			ddrive dd( ddnum, dshname, dbuff );
 			dbpool.run_task( boost::bind( ttask::dbstask, ser.Sdbvec ) );
+			dd.readDriveData( dbuff );
 			
 		}
 		if( !ec ) {
@@ -137,8 +138,8 @@ bool valSerialData( const vector<int> &vdata ) { // validates that all data conf
 	_logger.log( 0 );
 	if( (vdata[0] == 0 && vdata[1] == 0 )
 			&& ( vdata[5] == 1 && vdata[15] == 0)
-			/*&& ( vdata[16] == 1 && vdata[35] == 1 )
-			&& ( vdata[36] == 9 && vdata[37] == 9 )
+			&& ( vdata[16] == 1 && vdata[35] == 1 )
+			/*&& ( vdata[36] == 9 && vdata[37] == 9 )
 			&& ( vdata[39] == 9 && vdata[40] == 0 )
 			&& ( vdata[56] == 0 && vdata[72] == 0 )
 			&& ( vdata[88] == 0 && vdata[104] == 0 )
@@ -309,13 +310,14 @@ bool seedDaemon() {
 
 int main( ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
+	std::cout<< "Loading GDAgent - [ OK ] \n";
 	boost::system::error_code er;
 	std::string ver = "0.5 Alpha";
 	mlog.logstream << "GDAgent version " << ver << " Initializing. Reading configuration from config file";
 	mlog.log( 1 );
 	mlog.logstream << "Daemonizing....";
 	mlog.log( 1 );
-	//seedDaemon();
+	seedDaemon();
 	if( !er ) { // if EC is still empty, alls well
 		mlog.logstream << "Daemonizing successful.";
 		mlog.log( 1 );

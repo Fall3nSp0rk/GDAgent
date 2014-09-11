@@ -12,6 +12,7 @@ class mmapper {
 		static std::map<TPCodeUidPair, std::string> cachedData;
 		static std::map<DLpair, std::string> Ddlabel;
 	private:
+		boost::mutex mapmute_;
 		void createTypeMap();
 		void createSiteMap();
 		void createDriveLetterMap();

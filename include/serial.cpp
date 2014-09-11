@@ -7,11 +7,12 @@
 #include<iterator>
 #include<algorithm>
 #include<map>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 #include "log.h"
 #include"serial.h"
 #include<iomanip>
 #include<stdlib.h>
-#include<boost/thread.hpp>
 #include<exception>
 #include "globals.h"
 #include "dbase.h"

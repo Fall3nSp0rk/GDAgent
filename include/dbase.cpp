@@ -8,6 +8,10 @@
 #include<mysql++/mysql++.h>
 #include<vector>
 #include<iomanip>
+#include <boost/asio/io_service.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread.hpp>
 #include"dbase.h"
 #include"log.h"
 #include "globals.h"
@@ -296,6 +300,7 @@ dbase::dbase() { // overrides default constructor for dbase class
 	inval.resize(16);
 	// getQueryData(); // retrieve data to be entered into the database
 }
+
 
 void ttask::dbdrivetask( const std::vector<std::string> &qq ) {
 	dbase::dbase ddthread;

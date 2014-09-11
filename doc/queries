@@ -8,4 +8,34 @@ SELECT hostname,recover_status FROM gd_servers WHERE recover_status='Defunct';
 To view recovery status on all servers running recovers:
 SELECT hostname, recover_status FROM gd_servers WHERE NOT (recover_status='Not Running');
 
-To viewa
+Key: 
+Requires Att - Recovery not running, but spools are not 'full'.
+Infected - Recovery running with some defunct processes. 
+Defunct - Recovery running and all processes have gone defunct.
+Running - Recovery running and healthy
+Not Running - No Recovery running + spools above threshold.
+
+GC:
+
+To view GC status on a single server:
+SELECT gc_status FROM gd_servers WHERE hostname='<full hostname>';
+
+To view all serveres that are unhealthy in terms of GC:
+SELECT hostname FROM gd_servers WHERE NOT gc_status='Running';
+
+To view all servers with recover state X, where x is a value from the key below:
+SELECT gc_status FROM gd_servers WHERE gc_status='<x>';
+Key: 
+Running - GC or associated service is running and healthy
+Not Running - GC is not running at all.
+Critical Error - GC may or may not be running, but spooler file has >100 lines of errors in it.
+
+
+To view all data from a given host:
+SELECT * FROM gd_servers WHERE hostname='<hostname>';
+
+To see the last update time of a given host:
+SELECT last_update FROM gd_servers WHERE hostname='<hostname>';
+
+
+Here is an overview of all fiels in gd_servers table, with their relations, and a description for each

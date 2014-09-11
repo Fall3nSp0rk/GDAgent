@@ -8,6 +8,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/bind.hpp>
+#include <exception>
 #include <iomanip>
 #include <stdlib.h>
 #include "log.h"
@@ -24,59 +25,74 @@ std::map<TPCodeUidPair, std::string> mmapper::cachedData;
 std::map<RgCodeUidPair, std::string> mmapper::siteMap;
 std::string mmapper::getKeyFromMap( const int &key1, const int &key2, const int &mid ) {
 	logger _logger( glob.g_ll, glob.g_logfile );
-	switch( mid ) {
-		case 1: {
-			_logger.logstream << "Retrieving key values for Server Type.";
-			_logger.log( 1 );
-			auto it = cachedData.find(std::make_pair(key1, key2));
-			if( it != cachedData.end() ) {
-				_logger.logstream << "Successfully retrieved key value";
-		_logger.log( 1 );
-				return it->second;
+
+	try {
+		boost::this_thread::interruption_point();
+		switch( mid ) {
+			case 1: {
+				boost::mutex::scoped_lock lock( mapmute_ );
+				_logger.logstream << "Retrieving key values for Server Type.";
+				_logger.log( 1 );
+				auto it = cachedData.find(std::make_pair(key1, key2));
+				if( it != cachedData.end() ) {
+					_logger.logstream << "Successfully retrieved key value";
+					_logger.log( 1 );
+					return it->second;
+				}
+				else {
+					_logger.logstream << "Failed to retrieve key.";
+					_logger.log( 3 );
+					return "ERR";
+				}
+				break;
+			
 			}
-			else {
-				_logger.logstream << "Failed to retrieve key.";
-		_logger.log( 3 );
+			case 2: {
+				boost::mutex::scoped_lock lock( mapmute_ );
+				_logger.logstream << "Retrieving key values for Server Site.";
+				_logger.log( 1 );
+				auto it = siteMap.find(std::make_pair(key1, key2));
+				if( it != siteMap.end() ) {
+					_logger.logstream << "Successfully retrieved key value";
+					_logger.log( 1 );
+					return it->second;
+				}
+				else {
+					_logger.logstream << "Failed to retrieve key.";
+					_logger.log( 3 );
+					return "ERR";
+				}
+				break;
+			}
+			case 3: {
+				boost::mutex::scoped_lock lock( mapmute_ );
+				_logger.logstream << "Retrieveing key values for drive label";
+				_logger.log( 1 );
+				auto it = Ddlabel.find( std::make_pair( key1, key2 ));
+				if( it != Ddlabel.end() ) {
+					_logger.logstream << "Successfully retrieved key value";
+					_logger.log( 1 );
+					return it->second;
+				}
+				else {
+					_logger.logstream << "Failed to retrieve key.";
+					_logger.log( 3 );
+					return "ERR";
+				}
+				break;
+			}
+			default: {
+				_logger.logstream << "Invalid value passed to mapper! Err 3";
+				_logger.log( 5 );
 				return "ERR";
 			}
-			break;
 		}
-		case 2: {
-			_logger.logstream << "Retrieving key values for Server Site.";
-			_logger.log( 1 );
-			auto it = siteMap.find(std::make_pair(key1, key2));
-			if( it != siteMap.end() ) {
-				_logger.logstream << "Successfully retrieved key value";
-				_logger.log( 1 );
-				return it->second;
-			}
-			else {
-				_logger.logstream << "Failed to retrieve key.";
-				_logger.log( 3 );
-				return "ERR";
-			}
-			break;
-		}
-		case 3: {
-			_logger.logstream << "Retrieveing key values for drive label";
-				_logger.log( 1 );
-			auto it = Ddlabel.find( std::make_pair( key1, key2 ));
-			if( it != Ddlabel.end() ) {
-				_logger.logstream << "Successfully retrieved key value";
-				_logger.log( 1 );
-				return it->second;
-			}
-			else {
-				_logger.logstream << "Failed to retrieve key.";
-		_logger.log( 3 );
-				return "ERR";
-			}
-			break;
-		}
-		default:
-			_logger.logstream << "Invalid value passed to mapper! Err 3";
-			_logger.log( 5 );
-			return "ERR";
+	}
+	catch( std::exception &e ) {
+		_logger.logstream << "Exception in thread: " << e.what();
+		_logger.log( 4 );
+		boost::this_thread::interruption_point();
+
 	}
 }
 void mmapper::createDriveLetterMap() {

@@ -1,8 +1,35 @@
+v0.6.86.9 Alpha
+Build 06869
+- Changed: Message level '4' in logger is now 'exception', message level '5'
+in logger is now 'fatal', in preparation for new exception classes
+- Added: Mutex locking implemented in map class, as well as in logger class.
+- Changed: moved repeat code segments in logger for log() out of branched
+switch statement, as it was unecessary to have each branch perform the same
+action. Steps are now being performed after branch execution.
+- Fixed: Added an else to log(), so that if message level did not match
+logging level, logstream object would still be flushed, preventing double
+messages from appearing.
+- Changed: Re-enabled drive segment for testing with new mutex locks on
+std::map object.
+- Added: embedded code of getKeyFromMap() inside try{ } block, added catch
+afterwards for exception handling within function.
+- Fixed: Bug #0007 - number of database connections no longer exceeds maximum
+- Fixed: Bug #0008 - Drives now correctly report their status
+- Fixed: Bug #0009 - Spool statuses now correctly queried.
+- Fixed: Bug #0010 - Most AMS servers now correctly report their recover state
+as '0' - not running
+- New Issue - #0011 - ~5% of server streams being rejected by server. 
+- New Issue - #0012 - Pending/Reallocated Sector count not being reported
+across all hosts, but Healthy/degraded/critical/failed is.
+
+
 v0.6.86.8 Alpha
-Build 06867
+Build 06868
 - Added: Pool class for utilizing thread pools with work queues.
 - Added/Changed: Changed db module to run exclusively in a thread pool as
 opposed to each thread making their own connections.
+- New Issue: #0010 - AMS cluster max fill value changed to 62%, causing DCron
+to report it as 'needs attention'
 
 v0.6.86.7 Alpha
 Build 06867
@@ -43,6 +70,8 @@ often when reading from an instance of std::map.
 on database insertions.
 - New Issue: #0007 - Database connections exceeding mysql max connection
 limit, causing new connections to fail. Should be fixed with mutex locking.
+- New Issue: #0008 - Drive status always reports as 'failed'
+- New Issue: #0009 - Spool status always reports as 'OFF'
 - TODO: Add Mutex Locking to database access and map reads
 - TODO: Add thread queuing for database access and map reads.
 - TODO: Fix decimal to hex mac address conversion. Again.

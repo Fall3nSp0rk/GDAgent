@@ -10,7 +10,7 @@
 #include "globals.h"
 
 globals::globals() {
-	g_cfg="/home/ianc/www/coding/GDAgent/cfg/GDAgent.conf";
+	g_cfg="./cfg/GDAgent.conf";
 	readCfg();
 }
 
