@@ -1,0 +1,242 @@
+server -> socket connection -> new thread -> data transmitted by server line-by-line -> received by server -> data stored in arrays from buffer (for loop?) -> arrays parsed -> injected into mysql as strings
+
+
+
+validation check values:
+	-> buffer[0] = 0
+	-> buffer[1] = 0
+	-> buffer[5] = 1
+	-> buffer[15] = 0
+	-> buffer[16] = 1
+	-> buffer[36] = 1
+	-> buffer[37] = 9
+	-> buffer[38] = 9
+	-> buffer[39] = 9
+	-> buffer[56] = 1
+	-> buffer[72] = 1
+	-> buffer[88] = 1
+	-> buffer[104] = 1
+	-> buffer[120] = 1
+	-> buffer[136] = 1
+	-> buffer[152] = 1
+	-> buffer[168] = 1
+	-> buffer[184] = 1
+	-> buffer[200] = 1
+	-> buffer[216] = 1
+	-> buffer[232] = 1
+	-> buffer[248] = 1
+	-> buffer[264] = 1
+	-> buffer[280] = 1
+	-> buffer[296] = 1
+	-> buffer[312] = 1
+	-> buffer[328] = 1
+	-> buffer[344] = 1
+	-> buffer[360] = 1
+	-> buffer[376] = 1
+	-> buffer[392] = 1
+	-> buffer[408] = 1
+	-> buffer[424] = 1
+	-> buffer[440] = 1
+	-> buffer[456] = 1
+	-> buffer[472] = 1
+	-> buffer[488] = 1
+	-> buffer[504] = 1
+	-> buffer[520] = 1
+	-> buffer[536] = 1
+	-> buffer[552] = 1
+	-> buffer[568] = 1
+	-> buffer[584] = 1
+	-> buffer[600] = 1
+	-> buffer[616] = 1
+
+data arrays:
+char buffer[1024]
+	-> buffer[0]
+		-> always "0" (start)
+	-> buffer[1]
+		-> always "0" (start)
+	->buffer[2]- buffer[4]
+		-> 4-character max server number, expressed as zeroes before significant digits, e.g. 0250, or 0025, or 0003
+	
+	-> buffer[5] = "1" (next section)
+	-> buffer[6] = server_code[0] (server subtype code)
+		-> 0 = "special" (DB, cruncher, serv machines, and LBs servers)
+		-> 1 = "gc" (any server with .gc in the name, e.g. r/h/t servers
+		-> 2 = "nntp" (any server with .nntp in the name, e.g. border, backlog, etc.)
+		-> 3 = "vpn"
+		-> 4 = "dump truck"
+		-> 5 = "network equipment"
+		-> 6 = "other
+	-> buffer[7] = server_code[1] (server type code, displaying here as combination of server_code[0] and server_code[1])
+		-> 00 = "Database"
+		-> 02 = "Cruncher"
+		-> 03 = "Serv"
+		-> 04 = "Load Balancer"
+		-> 10 = "r-server"
+		-> 11 = "h-server"
+		-> 12 = "t-server"
+		-> 20 = "num server"
+		-> 21 = "border server"
+		-> 22 = "backlog server"
+		-> 23 = "buffer server"
+		-> 24 = "gcf server"
+		-> 25 = "xref server"
+		-> 26 = "search"
+		-> 27 = "logstash"
+		-> 30 = "vmhost server"
+		-> 31 = "vpnhost server"
+		-> 32 = "vpn virtual server"
+		-> 40 = "s-server."
+		-> 50 = "gateway"
+		-> 51 = "switch"
+		-> 52 = "firewall"
+		-> 53 = "sd switch"
+		-> 54 = "pdu"
+		-> 60 = "unknown/other"
+	-> buffer[8] = server_code[2] (service status)
+		-> 0 = "unknown/Not running"
+		-> 1 = "Running Normally"
+		-> 2 = "Some services running"
+		-> 3 = "Critical error"
+	-> buffer[9] = server_code[3] (Recovery status)
+		-> 0 = Recovery not running.
+		-> 1 = Recover running and healthy
+		-> 2 = Recovery running, but defunct processes found. (infected)
+		-> 3 = Recovery has gone defunct (defunt)
+	-> buffer[10] = server_code[4] (number of drives)
+		-> 0 = "12" (12 drive server)
+		-> 1 = "36" (36 drive server)
+		-> 2 = "4" ( 4 drive server)
+		-> 3 = "0" (unknown # of drives)
+	-> buffer[11] = server_code[5] (region code)
+		-> 0 = tx region
+		-> 1 = North America Region
+		-> 2 = EU region
+		-> 3 = East Asia region
+		-> 4 = AU region
+		-> 5 = Middle East Region
+	-> buffer[12] = server_code[6] (site identifier. paired with rg code)
+		-> 00 = aus
+		-> 01 = aus2
+		-> 10 = dca
+		-> 11 = dca1
+		-> 12 = dca2
+		-> 13 = dca3
+		-> 14 = lax
+		-> 15 = mia
+		-> 16 = tor
+		-> 17 = nyc
+		-> 20 = ams
+		-> 21 = ams1? (if it ever exists)
+		-> 22 = ams2
+		-> 23 = ams3
+		-> 24 = lon
+		-> 25 = zur
+		-> 26 = war
+		-> 30 = hkg
+		-> 31 = sgp
+		-> 32 = tok
+		-> 33 = syd
+	-> buffer[13] = server_code[7] (overall health)
+		-> 0 = "Down" (Not on, etc.)
+		-> 1 = "Healthy" (no problems)
+		-> 2 = "Degraded" (1-2 problems)
+		-> 3 = "Critical" ( 3+ problems )
+	-> buffer[14] = server_code[8] ( Asset type )
+		-> 0 = "Server"
+		-> 1 = "Network equipment"
+		-> 2 = "PDU"
+		-> 3 = "other"
+	-> buffer[15] = server_code[9] (Not mapped, array terminatora)
+	-> buffer[16] = "1" (next section)
+	-> buffer[17 - 35] (mac address segment)
+	-> buffer[36] = "1" (next section)
+	-> buffer[37] = "9" (dbitstart1)
+	-> buffer[38] = "9" (dbitstart2)
+	-> buffer[39] = "9" (dbitstart3)
+	-> buffer[40-576] = drive desc
+		->drive_code[0] = drive number first digit
+		->drive_code[1] = drive number second digit
+			-> 00 = 0:sda
+			-> 01 = 1:sdb
+			-> 02 = 2:sdc
+			-> 03 = 3:sdd
+			-> 04 = 4:sde
+			-> 05 = 5:sdf
+			-> 06 = 6:sdg
+			-> 07 = 7:sdh
+			-> 08 = 8:sdi
+			-> 09 = 9:sdj
+			-> 10 = 10:sdk
+			-> 11 = 11:sdl
+			..
+			-> 35 = 35:sda_
+			-> 99 = empty (ignore slot)
+		->drive_code[2] = spool number first digit
+		->drive_code[3] = spool number second digit
+			-> 01 = spool 01 (self explanatory)
+			..
+			-> 36 = Spool 36
+			-> 00 = error
+		-> drive_code[4] = Drive health code
+			-> 0 = Drive missing or failed.
+			-> 1 = Healthy ( 1> pending/reallocated sectors )
+			-> 2 = Degraded ( 1<, <8 pending/reallocated sectors )
+			-> 3 = Critical ( 8< pending/reallocated sectors )
+		-> drive_code[5] = Spool fill percent first digit
+		-> drive_code[6] = Spool fill percent second digit
+		-> drive_code[7] = Spool fill percent third digit
+			-> 000 = 0%
+			-> 100 = 100% (self explanatory)
+		-> drive_code[8] = spool status
+			-> 0 = OFF
+			-> 1 = RW
+			-> 2 = NO/ERROR
+			-> 3 = RO
+			-> 4 = NO
+		-> drive_code[9] = current pending sectors first digit
+		-> drive_code[10] = current pending sectors second digit
+		-> drive_code[11] = current pending sectors third digit
+			-> 000 = 0 pending sectors
+			-> 999 = 999+ pending sectors (999 will be max value, we don't really care about anything above 99 pending sectors anyways)
+		-> drive_code[12] = current reallocated sectors first digit
+		-> drive_code[13] = re/all second digit
+		-> drive_code[14] = re/all third digit
+			-> 000 = 0 re/all sectors
+			-> 999 = 999+ re/all sectors. same as pend.
+		-> drive_code[15] = terminator (0)
+	-> buffer[577] = 1 (Next Section)
+	-> buffer[578] = 9
+	-> buffer[579] = 9 ( this is the array descriptor start flag
+	-> buffer[580] = 9
+	-> buffer[581] = 9
+
+			ARRAY DESCRIPTION
+	-> buffer[582] = 1 start array descriptors
+	-> buffer[583] = number of arrays 1st digit
+	-> buffer[584] = number of arrays second digit
+	
+
+
+		-> array_code[0] = 9 (Array start 1)
+		-> array_code[1] = 9 (Array start 2) 
+		-> array_code[2] = array length first digit
+		-> array_code[3] = array length second digit - how many bits beyond this to read
+			-> 00 = you fucked up, throw an error.
+			-> 01 = You still fucked up, are you stupid? Error.
+			-> 02 = 2 drives in array (much better)
+			..
+			-> 36 = 36 drives in array (max value)
+			-> 37 = You're really dumb. throw an error.
+		-> array_code[4] = 9 (start member status)
+		-> array_code[5] = first member
+			-> 0 = faulty/failed/missing
+			-> 1 = Healthy and present
+
+
+
+
+
+
+	info on gn services
+

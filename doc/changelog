@@ -1,0 +1,67 @@
+v0.6.86.8 Alpha
+Build 06867
+- Added: Pool class for utilizing thread pools with work queues.
+- Added/Changed: Changed db module to run exclusively in a thread pool as
+opposed to each thread making their own connections.
+
+v0.6.86.7 Alpha
+Build 06867
+- Changed:  server database update function will now also update mac_addr
+field.
+- Added: more clarification to gc status code 2-4 by DCron script.
+- Added: 'Critical Error' state (code 3) for gc state.
+- Changed: Tweaked DCron script to log when an error occurs with DCron.
+
+v0.6.86.6 Alpha
+Build 06866
+- New: Started Writing SQL statements for Rafael's frontend to parse DB.
+- Fixed: issue where 3ware-based r-servers were not correctly reporting
+their number of hard drives at AMS2/LAX
+- Fixed: DCron script's gc server querying - script now no longer always
+reports gc as not running, now accurately reports GC as running.
+- Fixed: issue where old spool fill states were still showing up in DCron's
+query of spool fill percentage, resulting in script always reporting code 3
+for recovery state.
+- Fixed: issue where DCron did not have a proper condition for 'defunct' - also
+fixed issue where serial class interpreted "not running but spools not full"
+(code 3) as 'defunct'. DCron now transmits code 4 for 'defunct' recover state,
+and serial class now accurately reflects this.
+- Disabled: drive reporting interpretation/database insertion for the short
+term until mutex locking/thread queues are implemented.
+- New Issue: - #0001 - Spool fill percentage and var fill percentage are not being
+reported correctly by DCron
+- New Issue: - #0002 - program throws segfaults sporadically when server
+reports come in.
+- New Issue: - #0003 - program exits without error sporadically when server
+reports come in.
+- New Issue: - #0004 - logger class writes all previously flushed but not
+written messages since last write on buffer flush and write, regardless of
+message level.
+- New Issue: - #0005 - Double Free or corruption error still occurs every so
+often when reading from an instance of std::map.
+- New Issue: - #0006 - Double Linked List Corruption error occurs sporadically
+on database insertions.
+- New Issue: #0007 - Database connections exceeding mysql max connection
+limit, causing new connections to fail. Should be fixed with mutex locking.
+- TODO: Add Mutex Locking to database access and map reads
+- TODO: Add thread queuing for database access and map reads.
+- TODO: Fix decimal to hex mac address conversion. Again.
+- TODO: Write exception class
+- TODO: split logging off into seperate thread
+- TODO: Fix issue where some servers are reporting some or all hard drives as
+'failed', and spools as all 'OFF'
+- TODO: Move database credentials to config file
+- TODO: add start/stop/restart/status argument capability to main.
+- TODO: Write Array description class.
+- TODO: add resend ability and packet-loss tolerance
+- TODO: Add ability for threads to end naturally/normally.(Threads currently
+die off a bit after the end of execution, clogging resources.)
+- TODO: Make logger a singleton class
+- TODO: locate and plug memory leaks in GDAgent.
+- TODO: Add Sanity Checks and backups to GDDB
+- TODO: Write gd_array table for GDDB
+- TODO: Expand supported servers to h-servers.
+
+v0.59
+Build ?
+- start of changelog documentation
